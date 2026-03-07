@@ -2,6 +2,7 @@
   "name": "loss-calculator",
   "version": "1.0.0",
   "scripts": {
-    "start": "npx serve . -l ${PORT:-3000}"
+    "build": "mkdir -p dist && cp -r index.html images dist/",
+    "start": "npx serve dist -l ${PORT:-3000}"
   }
 }
