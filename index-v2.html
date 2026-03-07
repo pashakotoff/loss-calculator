@@ -1,0 +1,2763 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Калькулятор потерь — Business Commandos</title>
+  <meta name="description" content="Узнай, сколько денег ты теряешь каждый день без системы в бизнесе. 6 вопросов — результат сразу.">
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Сколько ты теряешь без системы?">
+  <meta property="og:description" content="Введи 6 цифр своего бизнеса — узнай реальную цену хаоса.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://calculator.businesscommandos.com">
+  <meta property="og:image" content="https://calculator.businesscommandos.com/og-image.jpg">
+  <meta property="og:locale" content="ru_RU">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Сколько ты теряешь без системы?">
+  <meta name="twitter:description" content="Введи 6 цифр своего бизнеса — узнай реальную цену хаоса.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+    ============================================================ */
+    :root {
+      --color-primary: #F59E0B;
+      --color-primary-hover: #D97706;
+      --color-primary-glow: rgba(245, 158, 11, 0.3);
+      --color-loss: #DC2626;
+      --color-loss-dim: rgba(220, 38, 38, 0.12);
+      --color-loss-border: rgba(220, 38, 38, 0.4);
+      --color-bg: #070B14;
+      --color-surface: #131C2E;
+      --color-surface-elevated: #1E2D45;
+      --color-border: #1E3A5F;
+      --color-text: #F1F5F9;
+      --color-text-secondary: #94A3B8;
+      --color-text-muted: #475569;
+      --color-accent: #3B82F6;
+      --font-heading: 'Bebas Neue', Impact, sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--color-bg);
+      color: var(--color-text);
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* ============================================================
+       SKIP LINK
+    ============================================================ */
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      z-index: 999;
+      background: var(--color-primary);
+      color: #000;
+      padding: 8px 16px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .skip-link:focus {
+      left: 0;
+    }
+
+    /* ============================================================
+       TWO-COLUMN LAYOUT
+    ============================================================ */
+    .calculator-layout {
+      display: grid;
+      grid-template-columns: 55fr 45fr;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* ============================================================
+       LEFT PANEL
+    ============================================================ */
+    .panel-left {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--color-bg);
+      border-right: 1px solid var(--color-border);
+    }
+
+    /* Progress bar inside left panel */
+    .left-progress {
+      flex-shrink: 0;
+      padding: 16px 32px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: none;
+    }
+    .left-progress.visible {
+      display: block;
+    }
+    .left-progress__meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .left-progress__logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .left-progress__logo-text {
+      font-family: var(--font-heading);
+      font-size: 13px;
+      color: var(--color-primary);
+      letter-spacing: 0.06em;
+      line-height: 1;
+    }
+    .left-progress__step {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .left-progress__track {
+      height: 4px;
+      background: var(--color-surface);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .left-progress__fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-primary), #FBBF24);
+      border-radius: 2px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
+    }
+
+    /* Screens container inside left panel */
+    .left-screens {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Individual left screen */
+    .left-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 32px 40px;
+      opacity: 0;
+      transform: translateX(100%);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+    }
+    .left-screen.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .left-screen.exit-left {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+
+    /* Hero screen overrides */
+    .left-screen--hero {
+      background-color: var(--color-bg);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Ccircle cx='1' cy='1' r='1' fill='%2394A3B8' fill-opacity='0.03'/%3E%3C/svg%3E");
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 24px;
+    }
+
+    .hero-logo {
+      height: 36px;
+      width: auto;
+      display: block;
+      margin: 0 auto 4px;
+    }
+
+    .hero-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      box-shadow: 0 0 40px rgba(245, 158, 11, 0.2);
+      margin: 0 auto;
+    }
+
+    .hero-heading {
+      font-family: var(--font-heading);
+      font-size: clamp(36px, 5vw, 56px);
+      color: var(--color-text);
+      line-height: 1.05;
+      letter-spacing: 0.02em;
+      max-width: 480px;
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .hero-note {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    /* Question screen content */
+    .screen-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+
+    .screen-icon--amber {
+      background: rgba(245, 158, 11, 0.08);
+      border-color: rgba(245, 158, 11, 0.2);
+    }
+
+    .screen-heading {
+      font-family: var(--font-heading);
+      font-size: clamp(24px, 3vw, 36px);
+      color: var(--color-text);
+      line-height: 1.1;
+      letter-spacing: 0.02em;
+      margin-bottom: 8px;
+    }
+
+    .screen-question {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--color-text);
+      line-height: 1.4;
+      margin-bottom: 20px;
+    }
+
+    /* ============================================================
+       INPUT GROUP
+    ============================================================ */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .input-label {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      transition: border-color 0.2s;
+    }
+
+    .input-row:focus-within {
+      border-color: var(--color-primary);
+    }
+
+    .input-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: var(--font-heading);
+      font-size: 28px;
+      color: var(--color-text);
+      min-width: 0;
+      -moz-appearance: textfield;
+    }
+
+    .input-row input::-webkit-outer-spin-button,
+    .input-row input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    .input-row input::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    .input-unit {
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       NAV BUTTONS (inside left screen)
+    ============================================================ */
+    .screen-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .screen-nav--first {
+      justify-content: flex-end;
+    }
+
+    .btn-back {
+      height: 44px;
+      min-width: 44px;
+      padding: 0 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.45);
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: color 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .btn-back:hover {
+      color: rgba(255,255,255,0.75);
+      border-color: rgba(255,255,255,0.30);
+    }
+
+    .btn-next {
+      height: 52px;
+      padding: 0 32px;
+      min-width: 160px;
+      font-family: var(--font-heading);
+      font-size: 16px;
+      letter-spacing: 0.03em;
+      color: #070B14;
+      background: var(--color-primary);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      flex-shrink: 0;
+    }
+
+    .btn-next:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+      transform: translateX(4px);
+    }
+
+    .btn-next:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    .btn-next:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Hero CTA */
+    .btn-hero {
+      display: block;
+      width: 100%;
+      max-width: 360px;
+      height: 56px;
+      padding: 0 32px;
+      font-family: var(--font-heading);
+      font-size: 20px;
+      letter-spacing: 0.04em;
+      color: #070B14;
+      background: var(--color-primary);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      margin: 0 auto;
+      transition: background 0.2s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-hero:hover {
+      background: var(--color-primary-hover);
+    }
+
+    .btn-hero:active {
+      transform: scale(0.98);
+    }
+
+    /* Result screen buttons */
+    .btn-primary-full {
+      display: block;
+      width: 100%;
+      padding: 18px 24px;
+      font-family: var(--font-heading);
+      font-size: 20px;
+      letter-spacing: 0.04em;
+      color: #000;
+      background: var(--color-primary);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-primary-full:hover {
+      background: var(--color-primary-hover);
+    }
+
+    .btn-primary-full:active {
+      transform: scale(0.98);
+    }
+
+    .btn-ghost-full {
+      display: block;
+      width: 100%;
+      padding: 14px 24px;
+      font-family: var(--font-heading);
+      font-size: 16px;
+      letter-spacing: 0.04em;
+      color: var(--color-text-secondary);
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-ghost-full:hover {
+      border-color: var(--color-text-muted);
+    }
+
+    /* ============================================================
+       RIGHT PANEL
+    ============================================================ */
+    .panel-right {
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: var(--color-surface);
+      display: flex;
+      flex-direction: column;
+      /* Custom scrollbar */
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-border) transparent;
+    }
+
+    .panel-right::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .panel-right::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .panel-right::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: 2px;
+    }
+
+    /* Right content blocks */
+    .right-content {
+      display: none;
+      flex-direction: column;
+      padding: 32px 32px 0 32px;
+      min-height: 100%;
+      gap: 0;
+    }
+
+    .right-content.active {
+      display: flex;
+    }
+
+    /* Fade-in animation for right content */
+    @keyframes rightFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .right-content.active {
+      animation: rightFadeIn 0.2s ease forwards;
+    }
+
+    /* ============================================================
+       RIGHT PANEL — HERO CONTENT
+    ============================================================ */
+    .hero-right {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      gap: 28px;
+      padding-bottom: 32px;
+    }
+
+    .hero-right__quote {
+      background: rgba(245, 158, 11, 0.06);
+      border: 1px solid rgba(245, 158, 11, 0.18);
+      border-radius: 14px;
+      padding: 20px 22px;
+    }
+
+    .hero-right__quote-mark {
+      font-family: var(--font-heading);
+      font-size: 40px;
+      color: var(--color-primary);
+      line-height: 0.8;
+      margin-bottom: 8px;
+    }
+
+    .hero-right__quote-text {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--color-text);
+      line-height: 1.5;
+    }
+
+    .hero-right__list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hero-right__list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 15px;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    .hero-right__list li::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      flex-shrink: 0;
+      margin-top: 7px;
+    }
+
+    .hero-right__guarantee {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--color-text-muted);
+    }
+
+    .hero-right__guarantee-badge {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-family: var(--font-heading);
+      font-size: 15px;
+      color: var(--color-text-secondary);
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+    }
+
+    /* ============================================================
+       SCREEN EXPLAIN
+    ============================================================ */
+    .screen-explain {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      line-height: 1.65;
+    }
+
+    .right-divider {
+      height: 1px;
+      background: var(--color-border);
+      margin: 20px 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .right-divider.visible {
+      opacity: 1;
+    }
+
+    /* ============================================================
+       LIVE RESULTS CONTAINER
+    ============================================================ */
+    .live-results {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ============================================================
+       MINI RESULT
+    ============================================================ */
+    .mini-result {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mini-result.visible {
+      display: flex;
+      animation: fadeSlideIn 0.25s ease forwards;
+    }
+
+    .mini-result__label {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .mini-result__value {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      color: var(--color-text-secondary);
+    }
+
+    /* Hour rate block */
+    .hour-rate-block {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 14px 18px;
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+    }
+
+    .hour-rate-block.visible {
+      display: flex;
+      animation: fadeSlideIn 0.25s ease forwards;
+    }
+
+    .hour-rate-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hour-rate-prefix {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+    }
+
+    .hour-rate-value {
+      font-family: var(--font-heading);
+      font-size: 26px;
+    }
+
+    .hour-rate-label {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .hour-rate-advice {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    .hour-rate-ops {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+
+    /* ============================================================
+       LOSS CARD
+    ============================================================ */
+    .loss-card {
+      background: var(--color-surface-elevated);
+      border-left: 3px solid var(--color-loss);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .loss-card.visible {
+      display: flex;
+      animation: fadeSlideIn 0.25s ease forwards;
+    }
+
+    .loss-card__label {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .loss-card__value {
+      font-family: var(--font-heading);
+      font-size: 26px;
+      color: var(--color-loss);
+    }
+
+    /* Hint block */
+    .mini-hint {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      background: rgba(59, 130, 246, 0.06);
+      border: 1px solid rgba(59, 130, 246, 0.15);
+      border-radius: 8px;
+      padding: 10px 14px;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       FADE SLIDE ANIMATION
+    ============================================================ */
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ============================================================
+       LOSS COUNTER (sticky bottom of right panel)
+    ============================================================ */
+    .loss-counter {
+      position: sticky;
+      bottom: 0;
+      margin-top: auto;
+      padding: 20px 32px;
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      display: none;
+    }
+
+    .loss-counter.visible {
+      display: block;
+    }
+
+    /* On screens where right content is active but counter hidden */
+    .right-content--no-counter .loss-counter {
+      display: none !important;
+    }
+
+    .loss-counter__title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-muted);
+      margin-bottom: 6px;
+    }
+
+    .loss-counter__total {
+      font-family: var(--font-heading);
+      font-size: 32px;
+      color: var(--color-loss);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .loss-counter__total--dash {
+      color: var(--color-text-muted);
+      font-size: 24px;
+    }
+
+    .loss-counter__breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .loss-counter__row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    .loss-counter__row-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .loss-counter__row-label::before {
+      content: '+';
+      color: var(--color-loss);
+      font-weight: 700;
+    }
+
+    .loss-counter__row-value {
+      color: var(--color-text-secondary);
+      font-weight: 500;
+    }
+
+    .loss-counter__row-value--pending {
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+
+    .loss-counter__gap-row {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    .loss-counter__gap-value {
+      color: var(--color-loss);
+      font-weight: 600;
+    }
+
+    /* ============================================================
+       RESULT SCREEN — LEFT SIDE
+    ============================================================ */
+    .result-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      gap: 24px;
+    }
+
+    .result-eyebrow {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .result-main-card {
+      background: rgba(220, 38, 38, 0.08);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      border-radius: 16px;
+      padding: 28px 32px;
+      text-align: center;
+    }
+
+    .result-main-label {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      margin-bottom: 8px;
+      font-family: var(--font-heading);
+      letter-spacing: 0.04em;
+    }
+
+    .result-main-value {
+      font-family: var(--font-heading);
+      font-size: clamp(48px, 5vw, 72px);
+      color: var(--color-loss);
+      line-height: 1;
+    }
+
+    .result-main-sublabel {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      margin-top: 6px;
+    }
+
+    .result-sub-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .result-sub-card {
+      background: rgba(245, 158, 11, 0.06);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .result-sub-card__label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-muted);
+    }
+
+    .result-sub-card__value {
+      font-family: var(--font-heading);
+      font-size: clamp(18px, 2.5vw, 26px);
+      color: var(--color-primary);
+      margin-top: 4px;
+      line-height: 1.1;
+    }
+
+    .result-emotional {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+      font-style: italic;
+      border-top: 1px solid var(--color-border);
+      padding-top: 16px;
+    }
+
+    .result-cta-heading {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      color: var(--color-text);
+      letter-spacing: 0.02em;
+    }
+
+    .result-cta-note {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .result-cta-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ============================================================
+       RESULT SCREEN — RIGHT SIDE
+    ============================================================ */
+    .result-right {
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .result-right__eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-muted);
+    }
+
+    .result-right__heading {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      color: var(--color-text);
+      letter-spacing: 0.02em;
+      margin-top: -12px;
+    }
+
+    /* Bar chart rows */
+    .result-bar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .result-bar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .result-bar-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .result-bar-value {
+      font-family: var(--font-heading);
+      font-size: 16px;
+      color: var(--color-loss);
+    }
+
+    .result-bar-track {
+      height: 6px;
+      background: var(--color-surface-elevated);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .result-bar-fill {
+      height: 100%;
+      background: var(--color-loss);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.6s ease-out;
+    }
+
+    .result-total-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .result-total-label {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-muted);
+    }
+
+    .result-total-value {
+      font-family: var(--font-heading);
+      font-size: 28px;
+      color: var(--color-loss);
+    }
+
+    .result-gap-block {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .result-gap-block.visible {
+      display: flex;
+    }
+
+    .result-gap-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-muted);
+    }
+
+    .result-gap-value {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      color: var(--color-loss);
+    }
+
+    .result-secondary-cta {
+      display: block;
+      width: 100%;
+      padding: 14px 24px;
+      font-family: var(--font-heading);
+      font-size: 16px;
+      letter-spacing: 0.04em;
+      color: var(--color-text);
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.2s, background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .result-secondary-cta:hover {
+      border-color: var(--color-primary);
+      background: rgba(245, 158, 11, 0.06);
+    }
+
+    .result-footer {
+      text-align: center;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      padding: 16px 0 32px;
+    }
+
+    .result-footer a {
+      color: var(--color-text-muted);
+      text-decoration: none;
+    }
+
+    /* ============================================================
+       REDUCED MOTION
+    ============================================================ */
+    @media (prefers-reduced-motion: reduce) {
+      .left-screen,
+      .left-screen.active,
+      .left-screen.exit-left,
+      .right-content.active,
+      .mini-result.visible,
+      .loss-card.visible,
+      .hour-rate-block.visible,
+      .left-progress__fill,
+      .result-bar-fill {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+      }
+    }
+
+    /* ============================================================
+       MOBILE — single column < 768px
+    ============================================================ */
+    @media (max-width: 767px) {
+      body {
+        overflow: auto;
+        height: auto;
+      }
+
+      .calculator-layout {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+      }
+
+      .panel-left {
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+        overflow: visible;
+        height: auto;
+        min-height: 100dvh;
+      }
+
+      .left-screens {
+        position: static;
+        overflow: visible;
+        flex: none;
+      }
+
+      .left-screen {
+        position: static;
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+        display: none;
+        padding: 24px 20px;
+      }
+
+      .left-screen.active {
+        display: flex;
+      }
+
+      .left-screen--hero {
+        min-height: 100dvh;
+        padding: 40px 20px;
+      }
+
+      .panel-right {
+        display: none; /* hidden — content embedded in mobile flow */
+      }
+
+      /* Mobile: embed right content after left screen */
+      .mobile-right-slot {
+        padding: 0 20px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      /* Mobile accordion for screen-explain */
+      .mobile-accordion-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        text-align: left;
+        transition: border-color 0.2s;
+      }
+
+      .mobile-accordion-btn:hover {
+        border-color: var(--color-primary);
+      }
+
+      .mobile-accordion-btn .accordion-arrow {
+        transition: transform 0.2s;
+        flex-shrink: 0;
+      }
+
+      .mobile-accordion-btn.open .accordion-arrow {
+        transform: rotate(180deg);
+      }
+
+      .mobile-accordion-content {
+        display: none;
+        padding: 12px 16px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-top: none;
+        border-radius: 0 0 10px 10px;
+        margin-top: -10px;
+      }
+
+      .mobile-accordion-content.open {
+        display: block;
+      }
+
+      /* Mobile sticky counter */
+      .mobile-counter-sticky {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: var(--color-surface);
+        border-top: 1px solid var(--color-border);
+        padding: 12px 20px;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+      }
+
+      .mobile-counter-sticky.visible {
+        display: flex;
+      }
+
+      .mobile-counter-sticky__label {
+        font-size: 12px;
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .mobile-counter-sticky__value {
+        font-family: var(--font-heading);
+        font-size: 20px;
+        color: var(--color-loss);
+      }
+
+      .mobile-counter-sticky__expand {
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        padding: 4px;
+        flex-shrink: 0;
+      }
+
+      /* Bottom padding so content not hidden behind sticky */
+      .calculator-layout {
+        padding-bottom: 56px;
+      }
+
+      .left-progress {
+        padding: 12px 20px 10px;
+      }
+
+      .screen-nav {
+        padding-top: 12px;
+        margin-top: 16px;
+      }
+    }
+
+    /* Mid-range: 768–1023px: 50/50 */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .calculator-layout {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="#main-left" class="skip-link">Перейти к содержимому</a>
+
+  <div class="calculator-layout" id="calculator-layout">
+
+    <!-- ============================================================
+         LEFT PANEL
+    ============================================================ -->
+    <main class="panel-left" id="main-left" role="main">
+
+      <!-- Progress bar -->
+      <div class="left-progress" id="left-progress" aria-label="Прогресс">
+        <div class="left-progress__meta">
+          <div class="left-progress__logo">
+            <img src="images/logo.png" alt="Business Commandos" width="100" height="40" style="height:28px;width:auto;display:block;">
+          </div>
+          <span class="left-progress__step" id="progress-step-label" aria-live="polite">Вопрос 1 из 6</span>
+        </div>
+        <div class="left-progress__track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progress-track">
+          <div class="left-progress__fill" id="progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Screens -->
+      <div class="left-screens" id="left-screens">
+
+        <!-- Screen 0: Hero -->
+        <section class="left-screen left-screen--hero active" id="left-screen-0" aria-label="Добро пожаловать" data-screen="0">
+          <img src="images/logo.png" alt="Business Commandos" width="200" height="80" class="hero-logo">
+          <div class="hero-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="14"/><line x1="16" x2="16" y1="18" y2="18"/><line x1="8" x2="8" y1="14" y2="14"/><line x1="8" x2="8" y1="18" y2="18"/><line x1="12" x2="12" y1="14" y2="14"/><line x1="12" x2="12" y1="18" y2="18"/></svg>
+          </div>
+          <h1 class="hero-heading">УЗНАЙ, СКОЛЬКО БИЗНЕС СЖИГАЕТ КАЖДЫЙ ДЕНЬ</h1>
+          <p class="hero-sub">6 вопросов. Без регистрации. Конкретные цифры — откуда берутся потери и сколько стоит хаос в твоём бизнесе.</p>
+          <button class="btn-hero" onclick="startQuiz()" aria-label="Начать расчёт">НАЧАТЬ РАСЧЁТ</button>
+          <p class="hero-note">Занимает 2 минуты</p>
+        </section>
+
+        <!-- Screen 1: Доход -->
+        <section class="left-screen" id="left-screen-1" aria-label="Вопрос 1 из 6: Текущий доход" data-screen="1">
+          <div class="screen-icon" aria-hidden="true">
+            <i data-lucide="wallet" style="width:28px;height:28px;color:#94A3B8;stroke-width:1.5"></i>
+          </div>
+          <h2 class="screen-heading">ТВОЙ ДОХОД</h2>
+          <p class="screen-question">Сколько зарабатываешь чистыми в месяц?</p>
+          <div class="input-group">
+            <label for="income-input" class="input-label">Сумма в рублях</label>
+            <div class="input-row">
+              <input
+                id="income-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9 ]*"
+                placeholder="0"
+                autocomplete="off"
+                aria-label="Доход в месяц в рублях"
+                oninput="onIncomeInput()"
+                onkeydown="handleEnter(event, 'next-1')"
+              >
+              <span class="input-unit">₽ / мес</span>
+            </div>
+          </div>
+          <div class="screen-nav screen-nav--first">
+            <button id="next-1" class="btn-next" onclick="goToScreen(2)" disabled aria-label="Перейти к следующему вопросу">ДАЛЕЕ →</button>
+          </div>
+        </section>
+
+        <!-- Screen 2: Часы -->
+        <section class="left-screen" id="left-screen-2" aria-label="Вопрос 2 из 6: Рабочие часы" data-screen="2">
+          <div class="screen-icon" aria-hidden="true">
+            <i data-lucide="clock" style="width:28px;height:28px;color:#94A3B8;stroke-width:1.5"></i>
+          </div>
+          <h2 class="screen-heading">ТВОЁ ВРЕМЯ</h2>
+          <p class="screen-question">Сколько часов в неделю работаешь на свой бизнес?</p>
+          <div class="input-group">
+            <label for="hours-input" class="input-label">Часов в неделю</label>
+            <div class="input-row">
+              <input
+                id="hours-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9 ]*"
+                placeholder="0"
+                autocomplete="off"
+                aria-label="Часов работы в неделю"
+                oninput="onHoursInput()"
+                onkeydown="handleEnter(event, 'next-2')"
+              >
+              <span class="input-unit">часов / нед</span>
+            </div>
+          </div>
+          <div class="screen-nav">
+            <button class="btn-back" onclick="goToScreen(1)" aria-label="Назад">← Назад</button>
+            <button id="next-2" class="btn-next" onclick="goToScreen(3)" disabled aria-label="Перейти к следующему вопросу">ДАЛЕЕ →</button>
+          </div>
+        </section>
+
+        <!-- Screen 3: Команда -->
+        <section class="left-screen" id="left-screen-3" aria-label="Вопрос 3 из 6: Размер команды" data-screen="3">
+          <div class="screen-icon" aria-hidden="true">
+            <i data-lucide="users" style="width:28px;height:28px;color:#94A3B8;stroke-width:1.5"></i>
+          </div>
+          <h2 class="screen-heading">ТВОЯ КОМАНДА</h2>
+          <p class="screen-question">Сколько человек у тебя в команде?</p>
+          <div class="input-group">
+            <label for="team-input" class="input-label">Количество сотрудников</label>
+            <div class="input-row">
+              <input
+                id="team-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9 ]*"
+                placeholder="0"
+                autocomplete="off"
+                aria-label="Количество сотрудников"
+                oninput="onTeamInput()"
+                onkeydown="handleEnter(event, 'next-3')"
+              >
+              <span class="input-unit">человек</span>
+            </div>
+          </div>
+          <div class="screen-nav">
+            <button class="btn-back" onclick="goToScreen(2)" aria-label="Назад">← Назад</button>
+            <button id="next-3" class="btn-next" onclick="goToScreen(4)" disabled aria-label="Перейти к следующему вопросу">ДАЛЕЕ →</button>
+          </div>
+        </section>
+
+        <!-- Screen 4: Зарплата -->
+        <section class="left-screen" id="left-screen-4" aria-label="Вопрос 4 из 6: Зарплата команды" data-screen="4">
+          <div class="screen-icon" aria-hidden="true">
+            <i data-lucide="banknote" style="width:28px;height:28px;color:#94A3B8;stroke-width:1.5"></i>
+          </div>
+          <h2 class="screen-heading">ФОНД ОПЛАТЫ ТРУДА</h2>
+          <p class="screen-question">Какая средняя зарплата сотрудника в месяц?</p>
+          <div class="input-group">
+            <label for="salary-input" class="input-label">Средняя зарплата в рублях</label>
+            <div class="input-row">
+              <input
+                id="salary-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9 ]*"
+                placeholder="0"
+                autocomplete="off"
+                aria-label="Средняя зарплата в месяц"
+                oninput="onSalaryInput()"
+                onkeydown="handleEnter(event, 'next-4')"
+              >
+              <span class="input-unit">₽ / мес</span>
+            </div>
+          </div>
+          <div class="screen-nav">
+            <button class="btn-back" onclick="goToScreen(3)" aria-label="Назад">← Назад</button>
+            <button id="next-4" class="btn-next" onclick="goToScreen(5)" disabled aria-label="Перейти к следующему вопросу">ДАЛЕЕ →</button>
+          </div>
+        </section>
+
+        <!-- Screen 5: Проекты -->
+        <section class="left-screen" id="left-screen-5" aria-label="Вопрос 5 из 6: Упущенные проекты" data-screen="5">
+          <div class="screen-icon" aria-hidden="true">
+            <i data-lucide="folder-open" style="width:28px;height:28px;color:#94A3B8;stroke-width:1.5"></i>
+          </div>
+          <h2 class="screen-heading">ДЕНЬГИ, КОТОРЫХ НЕТ</h2>
+          <p class="screen-question">Сколько мог бы заработать на отложенных проектах за год?</p>
+          <div class="input-group">
+            <label for="projects-input" class="input-label">Сумма в миллионах рублей (0 если нет таких проектов)</label>
+            <div class="input-row">
+              <input
+                id="projects-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9 ]*"
+                placeholder="0"
+                autocomplete="off"
+                aria-label="Упущенный доход в миллионах рублей"
+                oninput="onProjectsInput()"
+                onkeydown="handleEnter(event, 'next-5')"
+              >
+              <span class="input-unit">млн ₽</span>
+            </div>
+          </div>
+          <div class="screen-nav">
+            <button class="btn-back" onclick="goToScreen(4)" aria-label="Назад">← Назад</button>
+            <button id="next-5" class="btn-next" onclick="goToScreen(6)" aria-label="Перейти к следующему вопросу">ДАЛЕЕ →</button>
+          </div>
+        </section>
+
+        <!-- Screen 6: Цель -->
+        <section class="left-screen" id="left-screen-6" aria-label="Вопрос 6 из 6: Финансовая цель" data-screen="6">
+          <div class="screen-icon screen-icon--amber" aria-hidden="true">
+            <i data-lucide="target" style="width:28px;height:28px;color:#F59E0B;stroke-width:1.5"></i>
+          </div>
+          <h2 class="screen-heading">ТВОЯ ЦЕЛЬ</h2>
+          <p class="screen-question">Какая у тебя цель чистыми в месяц?</p>
+          <div class="input-group">
+            <label for="target-input" class="input-label">Целевой доход в рублях</label>
+            <div class="input-row">
+              <input
+                id="target-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9 ]*"
+                placeholder="0"
+                autocomplete="off"
+                aria-label="Целевой доход в месяц"
+                oninput="onTargetInput()"
+                onkeydown="handleEnter(event, 'next-6')"
+              >
+              <span class="input-unit">₽ / мес</span>
+            </div>
+          </div>
+          <div class="screen-nav">
+            <button class="btn-back" onclick="goToScreen(5)" aria-label="Назад">← Назад</button>
+            <button id="next-6" class="btn-next" onclick="showResult()" aria-label="Показать результат">РЕЗУЛЬТАТ →</button>
+          </div>
+        </section>
+
+        <!-- Screen 7: Результат (left side) -->
+        <section class="left-screen" id="left-screen-7" aria-label="Результаты расчёта" data-screen="7">
+          <div class="result-left">
+            <div>
+              <p class="result-eyebrow">РАСЧЁТ ЗАВЕРШЁН</p>
+              <p style="font-family:var(--font-heading);font-size:18px;color:var(--color-text-secondary);letter-spacing:0.03em;margin-top:4px">КАЖДЫЙ ДЕНЬ ТЫ ТЕРЯЕШЬ:</p>
+            </div>
+            <div class="result-main-card">
+              <p class="result-main-label">ТЫ ТЕРЯЕШЬ</p>
+              <div class="result-main-value" id="r-day" aria-live="polite">0 ₽</div>
+              <p class="result-main-sublabel">в день</p>
+              <div class="result-sub-grid">
+                <div class="result-sub-card">
+                  <div class="result-sub-card__label">В МЕСЯЦ</div>
+                  <div class="result-sub-card__value" id="r-month">0 ₽</div>
+                </div>
+                <div class="result-sub-card">
+                  <div class="result-sub-card__label">В ГОД</div>
+                  <div class="result-sub-card__value" id="r-year">0 ₽</div>
+                </div>
+              </div>
+            </div>
+            <p class="result-emotional">
+              Калькулятор считает только прямые потери. Реальная картина, как правило, хуже. Вопрос не в том, есть ли проблема — а в том, сколько она ещё будет стоить.
+            </p>
+            <div class="result-cta-stack">
+              <p class="result-cta-heading">ПОЛУЧИ ПЛАН ВЫХОДА ИЗ ЭТОЙ ЦИФРЫ</p>
+              <button class="btn-primary-full" onclick="handleCTA()" aria-label="Получить план">ПОЛУЧИТЬ ПЛАН</button>
+              <p class="result-cta-note">Перейдёшь в бот — там бесплатный разбор с Павлом</p>
+              <button class="btn-ghost-full" onclick="resetQuiz()" aria-label="Пересчитать заново">Пересчитать</button>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /left-screens -->
+
+      <!-- Mobile right slot (content from right panel injected here on mobile) -->
+      <div class="mobile-right-slot" id="mobile-right-slot" aria-live="polite"></div>
+
+      <!-- Mobile sticky counter -->
+      <div class="mobile-counter-sticky" id="mobile-counter-sticky" aria-live="polite">
+        <div>
+          <div class="mobile-counter-sticky__label">Потери</div>
+          <div class="mobile-counter-sticky__value" id="mobile-counter-value">—</div>
+        </div>
+        <button class="mobile-counter-sticky__expand" onclick="toggleMobileCounterSheet()" aria-label="Показать расшифровку потерь">
+          <i data-lucide="chevron-up" style="width:20px;height:20px;stroke-width:2"></i>
+        </button>
+      </div>
+
+    </main><!-- /panel-left -->
+
+    <!-- ============================================================
+         RIGHT PANEL
+    ============================================================ -->
+    <aside class="panel-right" id="panel-right" aria-label="Пояснения и счётчик">
+
+      <!-- Right content: Screen 0 -->
+      <div class="right-content active" id="right-content-0" data-right="0">
+        <div class="hero-right">
+          <div class="hero-right__quote">
+            <div class="hero-right__quote-mark" aria-hidden="true">"</div>
+            <p class="hero-right__quote-text">Средний собственник теряет 30–50% прибыли из-за хаоса в процессах</p>
+          </div>
+          <ul class="hero-right__list" aria-label="Что покажет калькулятор">
+            <li>Сколько стоит твоё время — и сколько его уходит на операционку</li>
+            <li>Скрытые потери от неэффективной работы команды</li>
+            <li>Деньги, которые лежат в отложенных проектах и ждут</li>
+          </ul>
+          <div class="hero-right__guarantee">
+            <div class="hero-right__guarantee-badge">6 вопросов — 2 минуты</div>
+            <span>Никакой регистрации. Результат сразу.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right content: Screen 1 — Доход -->
+      <div class="right-content" id="right-content-1" data-right="1">
+        <p class="screen-explain">
+          Это отправная точка. Мы используем эту цифру, чтобы рассчитать реальную стоимость твоего времени — и понять, сколько ты теряешь, когда занимаешься не тем.<br><br>
+          Не годовой оборот компании — именно то, что ты забираешь себе чистыми каждый месяц.
+        </p>
+
+        <div class="right-divider" id="divider-1"></div>
+
+        <div class="live-results" id="live-1" aria-live="polite">
+          <div class="mini-result" id="income-year-block">
+            <span class="mini-result__label">В год это</span>
+            <span class="mini-result__value" id="income-year-val">0 ₽</span>
+          </div>
+        </div>
+
+        <div class="loss-counter visible" id="counter-1" aria-live="polite">
+          <div class="loss-counter__title">Потери считаются...</div>
+          <div class="loss-counter__total loss-counter__total--dash" id="counter-1-total">—</div>
+          <div class="loss-counter__breakdown">
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Операционка</span>
+              <span class="loss-counter__row-value loss-counter__row-value--pending">введи часы на шаге 2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right content: Screen 2 — Часы -->
+      <div class="right-content" id="right-content-2" data-right="2">
+        <p class="screen-explain">
+          Ты — самый дорогой ресурс в своём бизнесе. Каждый час твоей работы стоит конкретных денег. Проблема не в том, что ты много работаешь — а в том, на что уходит это время.<br><br>
+          В несистемном бизнесе до 80% времени собственника уходит на операционку: контроль, переделки, тушение пожаров. Вместо развития — рутина.
+        </p>
+
+        <div class="right-divider" id="divider-2"></div>
+
+        <div class="live-results" id="live-2" aria-live="polite">
+          <div class="hour-rate-block" id="hour-rate-block">
+            <div class="hour-rate-row">
+              <span class="hour-rate-prefix">Твой час стоит</span>
+              <span class="hour-rate-value" id="hour-rate-val">0 ₽</span>
+              <span class="hour-rate-label" id="hour-rate-label-badge"></span>
+            </div>
+            <p class="hour-rate-advice" id="hour-rate-advice"></p>
+            <p class="hour-rate-ops" id="hour-rate-ops">На операционку уходит ~80% — примерно 0 часов / мес</p>
+          </div>
+          <div class="loss-card" id="hours-loss-card">
+            <span class="loss-card__label">Потери на операционке</span>
+            <span class="loss-card__value" id="ops-loss-val">0 ₽ / год</span>
+          </div>
+        </div>
+
+        <div class="loss-counter visible" id="counter-2" aria-live="polite">
+          <div class="loss-counter__title" id="counter-2-title">Потери считаются...</div>
+          <div class="loss-counter__total" id="counter-2-total">—</div>
+          <div class="loss-counter__breakdown">
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Операционка</span>
+              <span class="loss-counter__row-value" id="counter-2-ops">—</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Команда</span>
+              <span class="loss-counter__row-value loss-counter__row-value--pending">введи на шаге 4</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Проекты</span>
+              <span class="loss-counter__row-value loss-counter__row-value--pending">введи на шаге 5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right content: Screen 3 — Команда -->
+      <div class="right-content" id="right-content-3" data-right="3">
+        <p class="screen-explain">
+          Без чётких процессов и регламентов сотрудники работают вполсилы — не потому что плохие, а потому что нет системы. Каждый решает задачи по-своему, переспрашивает, переделывает.<br><br>
+          Исследования показывают: в несистемном бизнесе до 50% фонда оплаты труда уходит на неэффективную работу. Ты платишь полную зарплату — получаешь 50% отдачи.
+        </p>
+
+        <div style="margin-top:16px">
+          <div class="mini-hint">Введи среднюю зарплату на следующем шаге — посчитаем точнее</div>
+        </div>
+
+        <div class="loss-counter visible" id="counter-3" aria-live="polite">
+          <div class="loss-counter__title">Потери считаются...</div>
+          <div class="loss-counter__total" id="counter-3-total">—</div>
+          <div class="loss-counter__breakdown">
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Операционка</span>
+              <span class="loss-counter__row-value" id="counter-3-ops">—</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Команда</span>
+              <span class="loss-counter__row-value loss-counter__row-value--pending">+ данные команды на следующем шаге</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Проекты</span>
+              <span class="loss-counter__row-value loss-counter__row-value--pending">введи на шаге 5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right content: Screen 4 — Зарплата -->
+      <div class="right-content" id="right-content-4" data-right="4">
+        <p class="screen-explain">
+          Зарплаты — один из главных расходов бизнеса. И самый незаметный источник потерь: деньги уходят каждый месяц, но КПД команды никто не считает.
+        </p>
+
+        <div class="right-divider" id="divider-4"></div>
+
+        <div class="live-results" id="live-4" aria-live="polite">
+          <div class="mini-result" id="fot-block">
+            <span class="mini-result__label">Общий ФОТ в месяц</span>
+            <span class="mini-result__value" id="fot-month-val">0 ₽</span>
+          </div>
+          <div class="mini-result" id="fot-year-block">
+            <span class="mini-result__label">В год</span>
+            <span class="mini-result__value" id="fot-year-val">0 ₽</span>
+          </div>
+          <div class="loss-card" id="salary-loss-card">
+            <span class="loss-card__label">Цена неэффективности команды</span>
+            <span class="loss-card__value" id="team-loss-val">0 ₽ / год</span>
+          </div>
+        </div>
+
+        <div class="loss-counter visible" id="counter-4" aria-live="polite">
+          <div class="loss-counter__title" id="counter-4-title">Потери считаются...</div>
+          <div class="loss-counter__total" id="counter-4-total">—</div>
+          <div class="loss-counter__breakdown">
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Операционка</span>
+              <span class="loss-counter__row-value" id="counter-4-ops">—</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Команда</span>
+              <span class="loss-counter__row-value" id="counter-4-team">—</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Проекты</span>
+              <span class="loss-counter__row-value loss-counter__row-value--pending">введи на шаге 5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right content: Screen 5 — Проекты -->
+      <div class="right-content" id="right-content-5" data-right="5">
+        <p class="screen-explain">
+          У каждого предпринимателя есть список «когда-нибудь потом». Новый продукт, выход на другой рынок, найм нужного человека, партнёрство, которое давно напрашивается.<br><br>
+          Это не мечты — это реальные деньги, которые лежат и ждут. Но нет времени, потому что всё время на операционку.
+        </p>
+
+        <div class="right-divider" id="divider-5"></div>
+
+        <div class="live-results" id="live-5" aria-live="polite">
+          <div class="loss-card" id="projects-loss-card" style="border-left-color:#EF4444">
+            <span class="loss-card__label" style="color:#EF4444">Упущенная прибыль</span>
+            <span class="loss-card__value" id="projects-loss-val" style="color:#EF4444">0 ₽ / год</span>
+          </div>
+        </div>
+
+        <div class="loss-counter visible" id="counter-5" aria-live="polite">
+          <div class="loss-counter__title" id="counter-5-title">Потери считаются...</div>
+          <div class="loss-counter__total" id="counter-5-total">—</div>
+          <div class="loss-counter__breakdown">
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Операционка</span>
+              <span class="loss-counter__row-value" id="counter-5-ops">—</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Команда</span>
+              <span class="loss-counter__row-value" id="counter-5-team">—</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Проекты</span>
+              <span class="loss-counter__row-value" id="counter-5-projects">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right content: Screen 6 — Цель -->
+      <div class="right-content" id="right-content-6" data-right="6">
+        <p class="screen-explain">
+          Последний вопрос. Он важен не для расчёта потерь — а чтобы ты увидел разрыв.<br><br>
+          Разрыв между тем, где ты есть сейчас, и тем, куда хочешь прийти — это и есть настоящая цена отсутствия системы. Не абстрактные проценты, а твои личные деньги.
+        </p>
+
+        <div class="right-divider" id="divider-6"></div>
+
+        <div class="live-results" id="live-6" aria-live="polite">
+          <div class="mini-result" id="target-year-block">
+            <span class="mini-result__label">Цель в год</span>
+            <span class="mini-result__value" id="target-year-val">0 ₽</span>
+          </div>
+          <div class="mini-result" id="gap-block">
+            <span class="mini-result__label">Разрыв до цели</span>
+            <span class="mini-result__value" id="gap-val" style="color:var(--color-loss)">0 ₽ / мес</span>
+          </div>
+        </div>
+
+        <div class="loss-counter visible" id="counter-6" aria-live="polite">
+          <div class="loss-counter__title">Итого потерь:</div>
+          <div class="loss-counter__total" id="counter-6-total">—</div>
+          <div class="loss-counter__breakdown">
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Операционка</span>
+              <span class="loss-counter__row-value" id="counter-6-ops">—</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Команда</span>
+              <span class="loss-counter__row-value" id="counter-6-team">—</span>
+            </div>
+            <div class="loss-counter__row">
+              <span class="loss-counter__row-label">Проекты</span>
+              <span class="loss-counter__row-value" id="counter-6-projects">—</span>
+            </div>
+            <div class="loss-counter__gap-row" id="counter-6-gap-row" style="display:none">
+              <span>Разрыв до цели</span>
+              <span class="loss-counter__gap-value" id="counter-6-gap-val">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right content: Screen 7 — Результат (right side) -->
+      <div class="right-content" id="right-content-7" data-right="7">
+        <div class="result-right">
+          <p class="result-right__eyebrow">РАСКЛАД ПОТЕРЬ</p>
+          <h2 class="result-right__heading">ОТКУДА БЕРУТСЯ ПОТЕРИ</h2>
+
+          <div id="result-bars" aria-label="Источники потерь">
+            <div class="result-bar-row" id="r-bar-ops-row">
+              <div class="result-bar-header">
+                <span class="result-bar-title">Операционка</span>
+                <span class="result-bar-value" id="r-bar-ops-val">0 ₽/год</span>
+              </div>
+              <div class="result-bar-track"><div class="result-bar-fill" id="r-bar-ops-fill"></div></div>
+            </div>
+            <div style="height:12px"></div>
+            <div class="result-bar-row" id="r-bar-team-row">
+              <div class="result-bar-header">
+                <span class="result-bar-title">Команда</span>
+                <span class="result-bar-value" id="r-bar-team-val">0 ₽/год</span>
+              </div>
+              <div class="result-bar-track"><div class="result-bar-fill" id="r-bar-team-fill"></div></div>
+            </div>
+            <div style="height:12px" id="r-bar-proj-spacer"></div>
+            <div class="result-bar-row" id="r-bar-proj-row" style="display:none">
+              <div class="result-bar-header">
+                <span class="result-bar-title">Упущенные проекты</span>
+                <span class="result-bar-value" id="r-bar-proj-val">0 ₽/год</span>
+              </div>
+              <div class="result-bar-track"><div class="result-bar-fill" id="r-bar-proj-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="result-total-row">
+            <span class="result-total-label">Итого потерь</span>
+            <span class="result-total-value" id="r-total-val">0 ₽ / год</span>
+          </div>
+
+          <div class="result-gap-block" id="r-gap-block">
+            <p class="result-gap-label">Разрыв до цели</p>
+            <p class="result-gap-value" id="r-gap-val">0 ₽ / мес</p>
+          </div>
+
+          <button class="result-secondary-cta" onclick="handleCTA()" aria-label="Записаться на стратегический разбор">ЗАПИСАТЬСЯ НА СТРАТЕГИЧЕСКИЙ РАЗБОР</button>
+
+          <div class="result-footer">
+            Business Commandos<br>
+            <a href="https://businesscommandos.com" target="_blank" rel="noopener">businesscommandos.com</a>
+          </div>
+        </div>
+      </div>
+
+    </aside><!-- /panel-right -->
+
+  </div><!-- /calculator-layout -->
+
+  <!-- Mobile counter sheet overlay -->
+  <div id="mobile-counter-sheet" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(7,11,20,0.85);backdrop-filter:blur(4px)" onclick="toggleMobileCounterSheet()" aria-modal="true" role="dialog" aria-label="Расшифровка потерь">
+    <div style="position:absolute;bottom:0;left:0;right:0;background:var(--color-surface);border-radius:16px 16px 0 0;padding:24px 20px 32px;border-top:1px solid var(--color-border)" onclick="event.stopPropagation()">
+      <div style="width:40px;height:4px;background:var(--color-border);border-radius:2px;margin:0 auto 20px"></div>
+      <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-text-muted);margin-bottom:8px">Итого потерь</p>
+      <p style="font-family:var(--font-heading);font-size:36px;color:var(--color-loss);margin-bottom:16px" id="sheet-total">—</p>
+      <div id="sheet-breakdown" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button onclick="toggleMobileCounterSheet()" style="margin-top:20px;width:100%;padding:14px;background:var(--color-surface-elevated);border:1px solid var(--color-border);border-radius:10px;color:var(--color-text-secondary);font-size:14px;cursor:pointer">Закрыть</button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+  <script>
+    'use strict';
+
+    /* ============================================================
+       CONSTANTS
+    ============================================================ */
+    const TOTAL_STEPS = 6;
+    const SALEBOT_WEBHOOK_URL = 'SALEBOT_WEBHOOK_URL';
+    const SALEBOT_REDIRECT_URL = 'SALEBOT_REDIRECT_URL';
+    const userId = new URLSearchParams(location.search).get('user_id') || '';
+
+    /* ============================================================
+       STATE
+    ============================================================ */
+    const state = {
+      current_income: 0,
+      hours_per_week: 0,
+      team_size: 0,
+      avg_salary: 0,
+      projects_million: 0,
+      target_income: 0,
+      currentScreen: 0
+    };
+
+    /* CountUp animation state */
+    const counterState = {
+      counterTotals: {}, // keyed by counter id → current displayed value
+      debounceTimers: {}
+    };
+
+    /* ============================================================
+       CALCULATIONS
+    ============================================================ */
+    function calc() {
+      const hours_month = state.hours_per_week * 4.3;
+      const hour_rate = hours_month > 0 ? state.current_income / hours_month : 0;
+      const ops_hours_month = hours_month * 0.8;
+      const loss_operations = state.current_income * 9.6;
+      const loss_team = state.team_size * state.avg_salary * 12 * 0.5;
+      const loss_projects = state.projects_million * 1000000;
+      const total_year = loss_operations + loss_team + loss_projects;
+      const total_month = total_year / 12;
+      const total_day = total_year / 365;
+      const gap_month = Math.max(0, state.target_income - state.current_income);
+      const gap_year = gap_month * 12;
+      return {
+        hour_rate,
+        ops_hours_month,
+        loss_operations,
+        loss_team,
+        loss_projects,
+        total_year,
+        total_month,
+        total_day,
+        gap_month,
+        gap_year
+      };
+    }
+
+    /* ============================================================
+       FORMATTING
+    ============================================================ */
+    function fmt(n) {
+      return Math.round(n).toLocaleString('ru-RU');
+    }
+
+    function formatNum(n) {
+      return Math.round(n).toLocaleString('ru-RU');
+    }
+
+    /* ============================================================
+       COUNT-UP ANIMATION
+    ============================================================ */
+    function countUpEl(el, fromVal, toVal, duration) {
+      if (!el) return;
+      duration = duration || 1200;
+
+      // respect prefers-reduced-motion
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        el.textContent = fmt(toVal) + ' ₽/год';
+        return;
+      }
+
+      const startTime = performance.now();
+      const diff = toVal - fromVal;
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function tick(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = Math.round(fromVal + diff * easeOut(progress));
+        el.textContent = fmt(current) + ' ₽/год';
+        if (progress < 1) {
+          requestAnimationFrame(tick);
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    function countUpSimple(el, fromVal, toVal, duration, suffix) {
+      if (!el) return;
+      duration = duration || 1200;
+      suffix = suffix || ' ₽';
+
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        el.textContent = fmt(toVal) + suffix;
+        return;
+      }
+
+      const startTime = performance.now();
+      const diff = toVal - fromVal;
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function tick(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = Math.round(fromVal + diff * easeOut(progress));
+        el.textContent = fmt(current) + suffix;
+        if (progress < 1) {
+          requestAnimationFrame(tick);
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    /* ============================================================
+       COUNTER UPDATE (debounced)
+    ============================================================ */
+    function updateCounter(counterId, newTotal, breakdown) {
+      const key = counterId;
+
+      if (counterState.debounceTimers[key]) {
+        clearTimeout(counterState.debounceTimers[key]);
+      }
+
+      counterState.debounceTimers[key] = setTimeout(function() {
+        const totalEl = document.getElementById(counterId + '-total');
+        if (!totalEl) return;
+
+        const prevVal = counterState.counterTotals[key] || 0;
+        counterState.counterTotals[key] = newTotal;
+
+        // Animate total
+        if (newTotal > 0) {
+          totalEl.classList.remove('loss-counter__total--dash');
+          countUpEl(totalEl, prevVal, newTotal, 1200);
+        } else {
+          totalEl.textContent = '—';
+          totalEl.classList.add('loss-counter__total--dash');
+        }
+
+        // Update breakdown rows if provided
+        if (breakdown) {
+          Object.keys(breakdown).forEach(function(rowId) {
+            var rowEl = document.getElementById(rowId);
+            if (rowEl) {
+              rowEl.textContent = breakdown[rowId];
+              rowEl.classList.remove('loss-counter__row-value--pending');
+            }
+          });
+        }
+
+        // Update mobile sticky
+        updateMobileCounter(newTotal);
+      }, 400);
+    }
+
+    function updateMobileCounter(total) {
+      const mobileVal = document.getElementById('mobile-counter-value');
+      if (mobileVal) {
+        if (total > 0) {
+          mobileVal.textContent = fmt(total) + ' ₽/год';
+        } else {
+          mobileVal.textContent = '—';
+        }
+      }
+
+      // Show/hide mobile sticky (visible from screen 1+)
+      const sticky = document.getElementById('mobile-counter-sticky');
+      if (sticky && state.currentScreen >= 1) {
+        sticky.classList.add('visible');
+      }
+    }
+
+    /* ============================================================
+       HOUR RATE LEVEL
+    ============================================================ */
+    function getHourRateLevel(rate) {
+      if (rate < 1000) return {
+        color: '#EF4444',
+        bg: 'rgba(239,68,68,0.12)',
+        label: 'Дешевле курьера',
+        advice: 'Пока нет системы — ты будешь работать за всех. Делегировать не получится, потому что некому и некуда.'
+      };
+      if (rate < 2500) return {
+        color: '#EAB308',
+        bg: 'rgba(234,179,8,0.12)',
+        label: 'Как наёмный менеджер',
+        advice: 'Ты платишь себе ставку сотрудника, но несёшь риски владельца. Система высвободит твоё время для работы на другом уровне.'
+      };
+      if (rate < 5000) return {
+        color: '#EAB308',
+        bg: 'rgba(234,179,8,0.12)',
+        label: 'Дешевле разработчика',
+        advice: 'Твоё время стоит больше, чем уходит на операционку. Система вернёт тебе эти часы.'
+      };
+      if (rate < 10000) return {
+        color: '#F59E0B',
+        bg: 'rgba(245,158,11,0.12)',
+        label: 'Уровень консультанта',
+        advice: 'Хороший результат — но без системы этот потолок не пробить. Рост требует порядка.'
+      };
+      return {
+        color: '#22C55E',
+        bg: 'rgba(34,197,94,0.12)',
+        label: 'Топ-уровень',
+        advice: 'Система зафиксирует этот результат и позволит масштабировать без потери качества.'
+      };
+    }
+
+    /* ============================================================
+       NAVIGATION
+    ============================================================ */
+    function goToScreen(index) {
+      if (index === state.currentScreen) return;
+
+      const prevScreen = state.currentScreen;
+
+      // Left panel transition
+      const currentLeft = document.getElementById('left-screen-' + prevScreen);
+      const nextLeft = document.getElementById('left-screen-' + index);
+
+      if (currentLeft) {
+        currentLeft.classList.add('exit-left');
+        currentLeft.classList.remove('active');
+        setTimeout(function() {
+          currentLeft.classList.remove('exit-left');
+        }, 350);
+      }
+
+      if (nextLeft) {
+        // Coming from right (forward) or left (back)
+        if (index > prevScreen) {
+          nextLeft.style.transform = 'translateX(100%)';
+        } else {
+          nextLeft.style.transform = 'translateX(-100%)';
+        }
+        nextLeft.style.opacity = '0';
+        nextLeft.classList.add('active');
+
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            nextLeft.style.transform = '';
+            nextLeft.style.opacity = '';
+            setTimeout(function() {
+              nextLeft.style.transform = '';
+              nextLeft.style.opacity = '';
+            }, 10);
+          });
+        });
+      }
+
+      // Right panel transition
+      const currentRight = document.getElementById('right-content-' + prevScreen);
+      const nextRight = document.getElementById('right-content-' + index);
+
+      if (currentRight) {
+        currentRight.classList.remove('active');
+      }
+
+      if (nextRight) {
+        setTimeout(function() {
+          nextRight.classList.add('active');
+        }, 80);
+      }
+
+      state.currentScreen = index;
+      updateProgressBar(index);
+
+      // Scroll right panel to top
+      const rightPanel = document.getElementById('panel-right');
+      if (rightPanel) {
+        setTimeout(function() {
+          rightPanel.scrollTop = 0;
+        }, 100);
+      }
+
+      // Auto-focus input
+      setTimeout(function() {
+        const inp = nextLeft && nextLeft.querySelector('input');
+        if (inp) inp.focus();
+      }, 350);
+
+      // Sync counter for new screen
+      syncCounterForScreen(index);
+    }
+
+    function syncCounterForScreen(index) {
+      const c = calc();
+
+      if (index === 3) {
+        const opsVal = state.current_income > 0 ? fmt(c.loss_operations) + ' ₽/год' : '—';
+        document.getElementById('counter-3-ops') && (document.getElementById('counter-3-ops').textContent = opsVal);
+        const total = c.loss_operations > 0 ? c.loss_operations : 0;
+        const totalEl = document.getElementById('counter-3-total');
+        if (totalEl && total > 0) {
+          totalEl.classList.remove('loss-counter__total--dash');
+          totalEl.textContent = fmt(total) + ' ₽/год';
+        }
+      }
+
+      if (index === 6) {
+        const opsVal = c.loss_operations > 0 ? fmt(c.loss_operations) + ' ₽/год' : '—';
+        const teamVal = c.loss_team > 0 ? fmt(c.loss_team) + ' ₽/год' : '—';
+        const projVal = c.loss_projects > 0 ? fmt(c.loss_projects) + ' ₽/год' : '—';
+        document.getElementById('counter-6-ops') && (document.getElementById('counter-6-ops').textContent = opsVal);
+        document.getElementById('counter-6-team') && (document.getElementById('counter-6-team').textContent = teamVal);
+        document.getElementById('counter-6-projects') && (document.getElementById('counter-6-projects').textContent = projVal);
+        const totalEl = document.getElementById('counter-6-total');
+        if (totalEl && c.total_year > 0) {
+          totalEl.classList.remove('loss-counter__total--dash');
+          totalEl.textContent = fmt(c.total_year) + ' ₽/год';
+        }
+        if (c.gap_month > 0) {
+          const gapRow = document.getElementById('counter-6-gap-row');
+          const gapVal = document.getElementById('counter-6-gap-val');
+          if (gapRow) gapRow.style.display = 'flex';
+          if (gapVal) gapVal.textContent = fmt(c.gap_month) + ' ₽/мес';
+        }
+      }
+    }
+
+    function updateProgressBar(index) {
+      const progress = document.getElementById('left-progress');
+      const fill = document.getElementById('progress-fill');
+      const label = document.getElementById('progress-step-label');
+      const track = document.getElementById('progress-track');
+
+      if (index === 0) {
+        if (progress) progress.classList.remove('visible');
+        return;
+      }
+
+      if (progress) progress.classList.add('visible');
+
+      if (index > TOTAL_STEPS) {
+        if (fill) fill.style.width = '100%';
+        if (label) label.textContent = 'Результат';
+        if (track) track.setAttribute('aria-valuenow', '100');
+      } else {
+        const pct = (index / TOTAL_STEPS) * 100;
+        if (fill) fill.style.width = pct + '%';
+        if (label) label.textContent = 'Вопрос ' + index + ' из ' + TOTAL_STEPS;
+        if (track) track.setAttribute('aria-valuenow', String(Math.round(pct)));
+      }
+    }
+
+    function startQuiz() {
+      goToScreen(1);
+      // Show mobile sticky from screen 1
+      const sticky = document.getElementById('mobile-counter-sticky');
+      if (sticky) sticky.classList.add('visible');
+    }
+
+    function resetQuiz() {
+      state.current_income = 0;
+      state.hours_per_week = 0;
+      state.team_size = 0;
+      state.avg_salary = 0;
+      state.projects_million = 0;
+      state.target_income = 0;
+
+      ['income-input', 'hours-input', 'team-input', 'salary-input', 'projects-input', 'target-input'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+
+      // Reset live result visibility
+      var toHide = ['income-year-block', 'hour-rate-block', 'hours-loss-card',
+        'fot-block', 'fot-year-block', 'salary-loss-card',
+        'projects-loss-card', 'target-year-block', 'gap-block'];
+      toHide.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.remove('visible');
+      });
+
+      // Reset dividers
+      ['divider-1','divider-2','divider-4','divider-5','divider-6'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.remove('visible');
+      });
+
+      // Reset buttons
+      ['next-1','next-2','next-3','next-4'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.disabled = true;
+      });
+
+      // Reset counter state
+      counterState.counterTotals = {};
+
+      goToScreen(1);
+    }
+
+    /* ============================================================
+       ENTER KEY HANDLER
+    ============================================================ */
+    function handleEnter(event, btnId) {
+      if (event.key === 'Enter') {
+        var btn = document.getElementById(btnId);
+        if (btn && !btn.disabled) btn.click();
+      }
+    }
+
+    /* ============================================================
+       NUMBER FORMATTING (input)
+    ============================================================ */
+    function formatInput(input) {
+      var raw = input.value.replace(/\D/g, '');
+      var num = parseInt(raw) || 0;
+      var selStart = input.selectionStart;
+      var prevLen = input.value.length;
+      input.value = num > 0 ? num.toLocaleString('ru-RU') : '';
+      var diff = input.value.length - prevLen;
+      try {
+        input.setSelectionRange(selStart + diff, selStart + diff);
+      } catch(e) {}
+      return num;
+    }
+
+    /* ============================================================
+       SCROLL INTO VIEW (right panel)
+    ============================================================ */
+    function scrollToEl(el) {
+      if (!el) return;
+      var isMobile = window.innerWidth < 768;
+      if (isMobile) return; // mobile scrolls naturally
+      setTimeout(function() {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    }
+
+    /* ============================================================
+       INPUT HANDLERS
+    ============================================================ */
+    function onIncomeInput() {
+      var val = formatInput(document.getElementById('income-input'));
+      state.current_income = val;
+
+      var btn = document.getElementById('next-1');
+      if (btn) btn.disabled = !(val > 0);
+
+      var block = document.getElementById('income-year-block');
+      var divider = document.getElementById('divider-1');
+
+      if (val > 0) {
+        document.getElementById('income-year-val').textContent = fmt(val * 12) + ' ₽';
+        if (block) block.classList.add('visible');
+        if (divider) divider.classList.add('visible');
+        scrollToEl(block);
+      } else {
+        if (block) block.classList.remove('visible');
+        if (divider) divider.classList.remove('visible');
+      }
+    }
+
+    function onHoursInput() {
+      var val = formatInput(document.getElementById('hours-input'));
+      state.hours_per_week = val;
+
+      var btn = document.getElementById('next-2');
+      if (btn) btn.disabled = !(val > 0);
+
+      var hrBlock = document.getElementById('hour-rate-block');
+      var lossCard = document.getElementById('hours-loss-card');
+      var divider = document.getElementById('divider-2');
+
+      if (val > 0) {
+        var c = calc();
+        var level = getHourRateLevel(c.hour_rate);
+
+        // Hour rate value
+        var hrVal = document.getElementById('hour-rate-val');
+        if (hrVal) {
+          hrVal.textContent = fmt(c.hour_rate) + ' ₽';
+          hrVal.style.color = level.color;
+        }
+
+        // Label badge
+        var badge = document.getElementById('hour-rate-label-badge');
+        if (badge) {
+          badge.textContent = '— ' + level.label;
+          badge.style.color = level.color;
+          badge.style.background = level.bg;
+          badge.style.padding = '2px 8px';
+          badge.style.borderRadius = '4px';
+        }
+
+        var advice = document.getElementById('hour-rate-advice');
+        if (advice) advice.textContent = level.advice;
+
+        var ops = document.getElementById('hour-rate-ops');
+        if (ops) ops.textContent = 'На операционку уходит ~80% — примерно ' + fmt(c.ops_hours_month) + ' часов / мес';
+
+        if (hrBlock) {
+          hrBlock.classList.add('visible');
+        }
+        if (divider) divider.classList.add('visible');
+
+        if (state.current_income > 0) {
+          var opsLoss = document.getElementById('ops-loss-val');
+          if (opsLoss) opsLoss.textContent = fmt(c.loss_operations) + ' ₽ / год';
+          if (lossCard) {
+            lossCard.classList.add('visible');
+            scrollToEl(lossCard);
+          }
+
+          // Update counter-2
+          updateCounter('counter-2', c.loss_operations, {
+            'counter-2-ops': fmt(c.loss_operations) + ' ₽/год'
+          });
+
+          var titleEl = document.getElementById('counter-2-title');
+          if (titleEl) titleEl.textContent = 'Потери считаются...';
+        }
+      } else {
+        if (hrBlock) hrBlock.classList.remove('visible');
+        if (lossCard) lossCard.classList.remove('visible');
+        if (divider) divider.classList.remove('visible');
+      }
+    }
+
+    function onTeamInput() {
+      var val = formatInput(document.getElementById('team-input'));
+      state.team_size = val;
+      var btn = document.getElementById('next-3');
+      if (btn) btn.disabled = !(val > 0);
+    }
+
+    function onSalaryInput() {
+      var val = formatInput(document.getElementById('salary-input'));
+      state.avg_salary = val;
+
+      var btn = document.getElementById('next-4');
+      if (btn) btn.disabled = !(val > 0);
+
+      var fotBlock = document.getElementById('fot-block');
+      var fotYearBlock = document.getElementById('fot-year-block');
+      var lossCard = document.getElementById('salary-loss-card');
+      var divider = document.getElementById('divider-4');
+
+      if (val > 0) {
+        var fotMonth = state.team_size * val;
+        var c = calc();
+
+        document.getElementById('fot-month-val').textContent = fmt(fotMonth) + ' ₽';
+        document.getElementById('fot-year-val').textContent = fmt(fotMonth * 12) + ' ₽';
+        document.getElementById('team-loss-val').textContent = fmt(c.loss_team) + ' ₽ / год';
+
+        if (fotBlock) fotBlock.classList.add('visible');
+        if (fotYearBlock) fotYearBlock.classList.add('visible');
+        if (lossCard) {
+          lossCard.classList.add('visible');
+          scrollToEl(lossCard);
+        }
+        if (divider) divider.classList.add('visible');
+
+        // Update counter-4
+        updateCounter('counter-4', c.loss_operations + c.loss_team, {
+          'counter-4-ops': c.loss_operations > 0 ? fmt(c.loss_operations) + ' ₽/год' : '—',
+          'counter-4-team': fmt(c.loss_team) + ' ₽/год'
+        });
+      } else {
+        if (fotBlock) fotBlock.classList.remove('visible');
+        if (fotYearBlock) fotYearBlock.classList.remove('visible');
+        if (lossCard) lossCard.classList.remove('visible');
+        if (divider) divider.classList.remove('visible');
+      }
+    }
+
+    function onProjectsInput() {
+      var val = formatInput(document.getElementById('projects-input'));
+      state.projects_million = val;
+
+      var lossCard = document.getElementById('projects-loss-card');
+      var divider = document.getElementById('divider-5');
+
+      // Screen 5 next button always enabled (0 is valid)
+      var btn = document.getElementById('next-5');
+      if (btn) btn.disabled = false;
+
+      if (val > 0) {
+        var c = calc();
+        document.getElementById('projects-loss-val').textContent = fmt(c.loss_projects) + ' ₽ / год';
+        if (lossCard) {
+          lossCard.classList.add('visible');
+          scrollToEl(lossCard);
+        }
+        if (divider) divider.classList.add('visible');
+
+        // Update counter-5
+        updateCounter('counter-5', c.loss_operations + c.loss_team + c.loss_projects, {
+          'counter-5-ops': c.loss_operations > 0 ? fmt(c.loss_operations) + ' ₽/год' : '—',
+          'counter-5-team': c.loss_team > 0 ? fmt(c.loss_team) + ' ₽/год' : '—',
+          'counter-5-projects': fmt(c.loss_projects) + ' ₽/год'
+        });
+      } else {
+        if (lossCard) lossCard.classList.remove('visible');
+        if (divider) divider.classList.remove('visible');
+
+        var c2 = calc();
+        var t = c2.loss_operations + c2.loss_team;
+        updateCounter('counter-5', t, {
+          'counter-5-ops': c2.loss_operations > 0 ? fmt(c2.loss_operations) + ' ₽/год' : '—',
+          'counter-5-team': c2.loss_team > 0 ? fmt(c2.loss_team) + ' ₽/год' : '—',
+          'counter-5-projects': '—'
+        });
+      }
+    }
+
+    function onTargetInput() {
+      var val = formatInput(document.getElementById('target-input'));
+      state.target_income = val;
+
+      var targetYearBlock = document.getElementById('target-year-block');
+      var gapBlock = document.getElementById('gap-block');
+      var divider = document.getElementById('divider-6');
+      var btn = document.getElementById('next-6');
+      if (btn) btn.disabled = false; // always enabled
+
+      if (val > 0) {
+        document.getElementById('target-year-val').textContent = fmt(val * 12) + ' ₽';
+        if (targetYearBlock) {
+          targetYearBlock.classList.add('visible');
+          scrollToEl(targetYearBlock);
+        }
+        if (divider) divider.classList.add('visible');
+
+        var gap = Math.max(0, val - state.current_income);
+        if (gap > 0) {
+          var gapValEl = document.getElementById('gap-val');
+          if (gapValEl) gapValEl.textContent = fmt(gap) + ' ₽ / мес';
+          if (gapBlock) gapBlock.classList.add('visible');
+        } else {
+          if (gapBlock) gapBlock.classList.remove('visible');
+        }
+
+        // Update counter-6
+        var c = calc();
+        var gapRow = document.getElementById('counter-6-gap-row');
+        var gapValC = document.getElementById('counter-6-gap-val');
+        if (gap > 0 && gapRow) {
+          gapRow.style.display = 'flex';
+          if (gapValC) gapValC.textContent = fmt(gap) + ' ₽/мес';
+        } else if (gapRow) {
+          gapRow.style.display = 'none';
+        }
+
+        updateCounter('counter-6', c.total_year, {
+          'counter-6-ops': c.loss_operations > 0 ? fmt(c.loss_operations) + ' ₽/год' : '—',
+          'counter-6-team': c.loss_team > 0 ? fmt(c.loss_team) + ' ₽/год' : '—',
+          'counter-6-projects': c.loss_projects > 0 ? fmt(c.loss_projects) + ' ₽/год' : '—'
+        });
+      } else {
+        if (targetYearBlock) targetYearBlock.classList.remove('visible');
+        if (gapBlock) gapBlock.classList.remove('visible');
+        if (divider) divider.classList.remove('visible');
+      }
+    }
+
+    /* ============================================================
+       SHOW RESULT
+    ============================================================ */
+    function showResult() {
+      var c = calc();
+
+      // Populate values
+      document.getElementById('r-bar-ops-val').textContent = fmt(c.loss_operations) + ' ₽/год';
+      document.getElementById('r-bar-team-val').textContent = fmt(c.loss_team) + ' ₽/год';
+      document.getElementById('r-total-val').textContent = fmt(c.total_year) + ' ₽ / год';
+      document.getElementById('r-month').textContent = fmt(c.total_month) + ' ₽';
+      document.getElementById('r-year').textContent = fmt(c.total_year) + ' ₽';
+
+      // Projects bar
+      if (c.loss_projects > 0) {
+        document.getElementById('r-bar-proj-val').textContent = fmt(c.loss_projects) + ' ₽/год';
+        var projRow = document.getElementById('r-bar-proj-row');
+        if (projRow) projRow.style.display = 'block';
+        var projSpacer = document.getElementById('r-bar-proj-spacer');
+        if (projSpacer) projSpacer.style.display = 'block';
+      } else {
+        var projRow2 = document.getElementById('r-bar-proj-row');
+        if (projRow2) projRow2.style.display = 'none';
+        var projSpacer2 = document.getElementById('r-bar-proj-spacer');
+        if (projSpacer2) projSpacer2.style.display = 'none';
+      }
+
+      // Gap
+      if (c.gap_month > 0) {
+        document.getElementById('r-gap-val').textContent = fmt(c.gap_month) + ' ₽ / мес';
+        var gapBlock = document.getElementById('r-gap-block');
+        if (gapBlock) gapBlock.classList.add('visible');
+      }
+
+      // Navigate
+      goToScreen(7);
+
+      // Animate bars after transition
+      setTimeout(function() {
+        animateResultBars(c);
+      }, 400);
+
+      // Count-up main value
+      var dayEl = document.getElementById('r-day');
+      if (dayEl) {
+        dayEl.textContent = '0 ₽';
+        setTimeout(function() {
+          countUpSimple(dayEl, 0, c.total_day, 2000, ' ₽');
+        }, 500);
+      }
+    }
+
+    function animateResultBars(c) {
+      if (!c) c = calc();
+      var total = c.total_year;
+      if (total <= 0) return;
+
+      function setBar(fillId, val) {
+        var el = document.getElementById(fillId);
+        if (el) {
+          var pct = Math.round((val / total) * 100);
+          el.style.width = pct + '%';
+        }
+      }
+
+      setTimeout(function() { setBar('r-bar-ops-fill', c.loss_operations); }, 0);
+      setTimeout(function() { setBar('r-bar-team-fill', c.loss_team); }, 150);
+      setTimeout(function() { setBar('r-bar-proj-fill', c.loss_projects); }, 300);
+    }
+
+    /* ============================================================
+       CTA — SALEBOT
+    ============================================================ */
+    function handleCTA() {
+      var c = calc();
+      var payload = {
+        user_id: userId,
+        current_income: state.current_income,
+        hours_per_week: state.hours_per_week,
+        team_size: state.team_size,
+        avg_salary: state.avg_salary,
+        projects_million: state.projects_million,
+        target_income: state.target_income,
+        loss_operations: Math.round(c.loss_operations),
+        loss_team: Math.round(c.loss_team),
+        loss_projects: Math.round(c.loss_projects),
+        total_year: Math.round(c.total_year),
+        total_day: Math.round(c.total_day)
+      };
+
+      if (SALEBOT_WEBHOOK_URL !== 'SALEBOT_WEBHOOK_URL') {
+        var controller = new AbortController();
+        var timeout = setTimeout(function() { controller.abort(); }, 3000);
+        fetch(SALEBOT_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        }).catch(function() {}).finally(function() {
+          clearTimeout(timeout);
+        });
+      }
+
+      if (SALEBOT_REDIRECT_URL !== 'SALEBOT_REDIRECT_URL') {
+        setTimeout(function() {
+          window.location.href = SALEBOT_REDIRECT_URL;
+        }, 300);
+      }
+    }
+
+    /* ============================================================
+       MOBILE COUNTER SHEET
+    ============================================================ */
+    function toggleMobileCounterSheet() {
+      var sheet = document.getElementById('mobile-counter-sheet');
+      if (!sheet) return;
+      var isOpen = sheet.style.display !== 'none';
+
+      if (isOpen) {
+        sheet.style.display = 'none';
+      } else {
+        // Populate sheet
+        var c = calc();
+        var totalEl = document.getElementById('sheet-total');
+        if (totalEl) totalEl.textContent = c.total_year > 0 ? fmt(c.total_year) + ' ₽/год' : '—';
+
+        var breakdown = document.getElementById('sheet-breakdown');
+        if (breakdown) {
+          breakdown.innerHTML = '';
+          var rows = [
+            { label: 'Операционка', val: c.loss_operations },
+            { label: 'Команда', val: c.loss_team },
+            { label: 'Проекты', val: c.loss_projects }
+          ];
+          rows.forEach(function(row) {
+            if (row.val > 0) {
+              var div = document.createElement('div');
+              div.style.cssText = 'display:flex;justify-content:space-between;font-size:14px;color:var(--color-text-secondary)';
+              div.innerHTML = '<span>' + row.label + '</span><span style="font-family:var(--font-heading)">' + fmt(row.val) + ' ₽/год</span>';
+              breakdown.appendChild(div);
+            }
+          });
+        }
+
+        sheet.style.display = 'block';
+      }
+    }
+
+    /* ============================================================
+       INIT
+    ============================================================ */
+    document.addEventListener('DOMContentLoaded', function() {
+      // Init lucide icons
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+
+      // Screen 5 next button always active (0 is valid for projects)
+      var next5 = document.getElementById('next-5');
+      if (next5) next5.disabled = false;
+
+      // Screen 6 next button always active
+      var next6 = document.getElementById('next-6');
+      if (next6) next6.disabled = false;
+    });
+
+    window.addEventListener('load', function() {
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    });
+  </script>
+</body>
+</html>
