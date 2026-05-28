@@ -1024,7 +1024,8 @@
       <h2 class="screen-heading">ФОНД ОПЛАТЫ ТРУДА</h2>
 
       <p class="screen-explain">
-        Зарплаты — один из главных расходов бизнеса. И самый незаметный источник потерь: деньги уходят каждый месяц, но КПД команды никто не считает.
+        Зарплаты — один из главных расходов бизнеса. И самый незаметный источник потерь: деньги уходят каждый месяц, но КПД команды никто не считает.<br><br>
+        <strong>По нашим данным, 50% работы команды — неэффективная.</strong> Это значит, что половина фонда оплаты труда фактически сгорает: ты платишь за полный рабочий день, а получаешь результат за полдня.
       </p>
 
       <p class="screen-question">Какая средняя зарплата сотрудника в месяц?</p>
@@ -1089,7 +1090,7 @@
       <p class="screen-question">Сколько ты мог бы заработать на отложенных проектах за год?</p>
 
       <div class="input-group">
-        <label for="projects-input" class="input-hint" style="font-size:13px;color:var(--color-text-muted)">Сумма в миллионах рублей (введи 0 если нет таких проектов)</label>
+        <label for="projects-input" class="input-hint" style="font-size:13px;color:var(--color-text-muted)">Сумма в рублях за год (введи 0 если нет таких проектов)</label>
         <div class="input-row">
           <input
             id="projects-input"
@@ -1098,11 +1099,11 @@
             pattern="[0-9 ]*"
             placeholder="0"
             autocomplete="off"
-            aria-label="Упущенный доход в миллионах рублей"
+            aria-label="Упущенный доход в рублях за год"
             oninput="onProjectsInput()"
             onkeydown="handleEnter(event, 'next-5')"
           >
-          <span class="input-unit">млн ₽</span>
+          <span class="input-unit">₽ / год</span>
         </div>
 
         <div id="projects-loss-card" class="loss-card" aria-live="polite" style="border-left: 3px solid #EF4444; background: rgba(239,68,68,0.08);">
@@ -1296,15 +1297,19 @@
       hours_per_week: 0,
       team_size: 0,
       avg_salary: 0,
-      projects_million: 0,
+      projects_year: 0,
       target_income: 0,
       currentScreen: 0
     };
 
     const TOTAL_STEPS = 6;
-    const SALEBOT_WEBHOOK_URL = 'SALEBOT_WEBHOOK_URL';
-    const SALEBOT_REDIRECT_URL = 'SALEBOT_REDIRECT_URL';
     const userId = new URLSearchParams(location.search).get('user_id') || '';
+
+    // 1. Webhook — куда летят данные расчёта
+    const SALEBOT_WEBHOOK_URL = 'https://chatter.salebot.pro/api/4722a045346a33ecf63aa22ee02129c4/callback';
+
+    // 2. Редирект обратно в Telegram-бот
+    const SALEBOT_REDIRECT_URL = 'https://t.me/pashakotoff_bot?start=calc_' + userId;
 
     /* ============================================================
        HOUR RATE LEVEL
@@ -1346,7 +1351,7 @@
       const ops_hours_month = hours_month * 0.8;
       const loss_operations = state.current_income * 9.6;
       const loss_team = state.team_size * state.avg_salary * 12 * 0.5;
-      const loss_projects = state.projects_million * 1000000;
+      const loss_projects = state.projects_year;
       const total_year = loss_operations + loss_team + loss_projects;
       const total_month = total_year / 12;
       const total_day = total_year / 365;
@@ -1459,7 +1464,7 @@
       state.hours_per_week = 0;
       state.team_size = 0;
       state.avg_salary = 0;
-      state.projects_million = 0;
+      state.projects_year = 0;
       state.target_income = 0;
 
       // Reset inputs
@@ -1522,7 +1527,7 @@
       const num = parseInt(raw) || 0;
       const selStart = input.selectionStart;
       const prevLen = input.value.length;
-      input.value = num > 0 ? num.toLocaleString('ru-RU') : '';
+      input.value = raw === '' ? '' : num.toLocaleString('ru-RU');
       const diff = input.value.length - prevLen;
       input.setSelectionRange(selStart + diff, selStart + diff);
       return num;
@@ -1620,16 +1625,13 @@
     }
 
     function onProjectsInput() {
-      const input = document.getElementById('projects-input');
-      const raw = input.value.replace(/\D/g, '');
-      const numVal = parseInt(raw) || 0;
-      input.value = raw === '' ? '' : numVal.toLocaleString('ru-RU');
-      state.projects_million = numVal;
+      const val = formatInput(document.getElementById('projects-input'));
+      state.projects_year = val;
 
       const lossCard = document.getElementById('projects-loss-card');
 
-      if (numVal > 0) {
-        document.getElementById('projects-loss-val').textContent = fmt(numVal * 1000000) + ' ₽ / год';
+      if (val > 0) {
+        document.getElementById('projects-loss-val').textContent = fmt(val) + ' ₽ / год';
         lossCard.classList.add('visible');
       } else {
         lossCard.classList.remove('visible');
@@ -1726,11 +1728,12 @@
       const c = calc();
       const payload = {
         user_id: userId,
+        message: 'calc_done',
         current_income: state.current_income,
         hours_per_week: state.hours_per_week,
         team_size: state.team_size,
         avg_salary: state.avg_salary,
-        projects_million: state.projects_million,
+        projects_year: state.projects_year,
         target_income: state.target_income,
         loss_operations: Math.round(c.loss_operations),
         loss_team: Math.round(c.loss_team),
