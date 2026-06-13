@@ -1742,19 +1742,17 @@
         total_day: Math.round(c.total_day)
       };
 
-      // Non-blocking fetch with 3s timeout
+      // Fire-and-forget. text/plain + no-cors обходят CORS (у эндпойнта Salebot нет
+      // CORS-заголовков, иначе preflight рубит часть лидов). keepalive гарантирует
+      // доставку, даже когда страница уже редиректит в бота.
       if (SALEBOT_WEBHOOK_URL !== 'SALEBOT_WEBHOOK_URL') {
-        const controller = new AbortController();
-        const timeout = setTimeout(function() { controller.abort(); }, 3000);
-
         fetch(SALEBOT_WEBHOOK_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(payload),
-          signal: controller.signal
-        }).catch(function() {}).finally(function() {
-          clearTimeout(timeout);
-        });
+          mode: 'no-cors',
+          keepalive: true
+        }).catch(function() {});
       }
 
       // Redirect
