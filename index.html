@@ -1755,6 +1755,26 @@
         }).catch(function() {});
       }
 
+      // === КОПИЯ ЛИДА В CRM (bc-website) — ОТДЕЛЬНО от Salebot, fire-and-forget ===
+      // Salebot-вебхук выше уже сработал. Этот запрос его НЕ трогает, ошибки глушим,
+      // на редирект в бота не влияет. source=calculator, событие без контакта.
+      try {
+        fetch('https://businesscommandos.ru/event.php', {
+          method: 'POST',
+          mode: 'no-cors',
+          keepalive: true,
+          body: new URLSearchParams({
+            source: 'calculator',
+            kind: 'event',
+            stage: 'calc_done',
+            client_id: userId,
+            page: location.pathname,
+            channel: 'калькулятор потерь',
+            payload: JSON.stringify(payload)
+          })
+        }).catch(function () {});
+      } catch (e) {}
+
       // Redirect
       if (SALEBOT_REDIRECT_URL !== 'SALEBOT_REDIRECT_URL') {
         setTimeout(function() {
