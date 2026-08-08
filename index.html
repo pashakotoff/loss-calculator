@@ -4,6 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Калькулятор потерь — Business Commandos</title>
+
+  <!-- Шрифты свои, не с Google (Ж-6, 2026-08-06). Было: preconnect к двум чужим доменам
+       + запрос CSS + запросы самих файлов — цепочка из трёх раундтрипов ДО первой отрисовки
+       текста. Стало: файлы рядом, ноль внешних запросов.
+       Inter — один вариативный файл на ось 100–900 вместо четырёх начертаний.
+       Bebas Neue — только latin: кириллицы в этом шрифте нет вовсе, русские заголовки
+       и раньше рисовались запасным Impact/Arial Narrow, latin-ext (диакритика) не нужен. -->
+  <style>
+    @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;
+      src:url("fonts/inter-cyrillic.woff2") format("woff2");
+      unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+    @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;
+      src:url("fonts/inter-latin-ext.woff2") format("woff2");
+      unicode-range:U+20BD}
+    @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;
+      src:url("fonts/inter-latin.woff2") format("woff2");
+      unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+    @font-face{font-family:"Bebas Neue";font-style:normal;font-weight:400;font-display:swap;
+      src:url("fonts/bebas-latin.woff2") format("woff2");
+      unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  </style>
   <meta name="description" content="Узнай, сколько денег ты теряешь каждый день без системы в бизнесе. 6 вопросов — результат сразу.">
   <meta name="robots" content="noindex, nofollow">
 
@@ -20,11 +41,7 @@
   <meta name="twitter:title" content="Сколько ты теряешь без системы?">
   <meta name="twitter:description" content="Введи 6 цифр своего бизнеса — узнай реальную цену хаоса.">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
-  <style>
+<style>
     /* ============================================================
        DESIGN TOKENS
     ============================================================ */
@@ -1755,6 +1772,13 @@
         }).catch(function() {});
       }
 
+      // Цель Метрики на завершённый расчёт. Имя совпадает со stage, который уже уходит
+      // в CRM ниже, — чтобы две системы считали одно и то же событие и цифры сходились.
+      // Шлём ДО редиректа в бота: после него страницы уже нет.
+      // ⚠️ Цель `calc_done` надо завести в интерфейсе Метрики — иначе визиты будут
+      // видны, а конверсия в отчётах не появится. Вызов при этом безвреден.
+      try { if (typeof ym === 'function') ym(105930063, 'reachGoal', 'calc_done'); } catch (e) {}
+
       // === КОПИЯ ЛИДА В CRM (bc-website) — ОТДЕЛЬНО от Salebot, fire-and-forget ===
       // Salebot-вебхук выше уже сработал. Этот запрос его НЕ трогает, ошибки глушим,
       // на редирект в бота не влияет. source=calculator, событие без контакта.
@@ -1799,5 +1823,54 @@
       }
     });
   </script>
+
+  <!-- Яндекс.Метрика, счётчик 105930063 — тот же, что на сайте, в блоге и в аудите
+       (2026-08-06). Раньше на калькуляторе счётчика не было вовсе: завершения расчёта
+       писались в CRM через event.php (stage=calc_done), но сколько человек его открыли,
+       откуда пришли и сколько отвалились по дороге — не видел никто. Это был пропуск,
+       а не решение: на соседнем аудите счётчик стоит давно.
+
+       Настройки один в один как в аудите, без webvisor: записывать сессии в инструменте
+       расчёта незачем, а уведомления о куках здесь нет — как и там. -->
+  <script>
+    /* Служебный заход не считаем (08.08.2026). Два случая:
+       1) браузер помечен вручную ссылкой ?bc_staff=1 (снимается ?bc_staff=0) — метка лежит
+          в localStorage домена, одна на сайт, блог и этот калькулятор;
+       2) страницу открыл не человек, а автоматика: агент через Playwright, headless-браузер,
+          Lighthouse. Метку такой заход поставить не может — профиль каждый раз новый,
+          поэтому узнаём его по признакам самого браузера.
+       В обоих случаях счётчик не грузим, а ym() делаем пустышкой, чтобы вызовы целей
+       из расчёта не падали с ошибкой. Тот же блок — на сайте и в блоге. */
+    (function () {
+      var staff = false;
+      try {
+        var q = location.search.match(/[?&]bc_staff=([01])/);
+        if (q) { if (q[1] === '1') { localStorage.setItem('bc_staff', '1'); } else { localStorage.removeItem('bc_staff'); } }
+        staff = localStorage.getItem('bc_staff') === '1';
+      } catch (e) {}
+      if (!staff) {
+        try {
+          var n = navigator, ua = n.userAgent || '';
+          staff = !!n.webdriver
+            || /Headless|PhantomJS|Lighthouse|Puppeteer|Playwright|Selenium/i.test(ua)
+            || !!(window.__playwright || window.__puppeteer_evaluation_script__ || window._phantom || window.callPhantom || window.__nightmare || window.Cypress || window.__selenium_unwrapped);
+        } catch (e2) {}
+      }
+      if (staff) { window.ym = function () {}; return; }
+
+      (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+      m[i].l=1*new Date();
+      for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}
+      k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+      (window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
+
+      ym(105930063, "init", {
+        clickmap:true,
+        trackLinks:true,
+        accurateTrackBounce:true
+      });
+    })();
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/105930063" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 </body>
 </html>
