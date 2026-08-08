@@ -1320,7 +1320,24 @@
     };
 
     const TOTAL_STEPS = 6;
-    const userId = new URLSearchParams(location.search).get('user_id') || '';
+    /* Кто считает. Из бота человек приходит по ссылке с ?user_id=..., и расчёт есть к кому
+       привязать. У пришедшего с сайта или из поиска этого параметра нет — раньше здесь
+       оставалась пустая строка, и дальше всё ломалось тихо: в Salebot уходил расчёт без
+       адресата, а в Telegram — голое `calc_` без хвоста (08.08.2026 так потерялся заход
+       владельца). Поэтому своему посетителю выдаём собственный идентификатор и запоминаем
+       его в браузере: вернётся дочитать — останется тем же человеком. Префикс `w` (web)
+       отличает наш идентификатор от ботовского. */
+    const userId = (function () {
+      var fromBot = new URLSearchParams(location.search).get('user_id') || '';
+      try {
+        if (fromBot) { localStorage.setItem('bc_calc_uid', fromBot); return fromBot; }
+        var saved = localStorage.getItem('bc_calc_uid');
+        if (saved) return saved;
+      } catch (e) {}
+      var own = 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      try { localStorage.setItem('bc_calc_uid', own); } catch (e) {}
+      return own;
+    })();
 
     // 1. Webhook — куда летят данные расчёта
     const SALEBOT_WEBHOOK_URL = 'https://chatter.salebot.pro/api/4722a045346a33ecf63aa22ee02129c4/callback';
@@ -1772,12 +1789,10 @@
         }).catch(function() {});
       }
 
-      // Цель Метрики на завершённый расчёт. Имя совпадает со stage, который уже уходит
-      // в CRM ниже, — чтобы две системы считали одно и то же событие и цифры сходились.
-      // Шлём ДО редиректа в бота: после него страницы уже нет.
-      // ⚠️ Цель `calc_done` надо завести в интерфейсе Метрики — иначе визиты будут
-      // видны, а конверсия в отчётах не появится. Вызов при этом безвреден.
-      try { if (typeof ym === 'function') ym(105930063, 'reachGoal', 'calc_done'); } catch (e) {}
+      // Цель Метрики на завершённый расчёт (заведена в счётчике). Имя совпадает со stage,
+      // который уходит в CRM ниже, — чтобы две системы считали одно и то же событие.
+      // Сам вызов — ниже, вместе с редиректом: уходить в бота можно только после того,
+      // как Метрика подтвердит отправку.
 
       // === КОПИЯ ЛИДА В CRM (bc-website) — ОТДЕЛЬНО от Salebot, fire-and-forget ===
       // Salebot-вебхук выше уже сработал. Этот запрос его НЕ трогает, ошибки глушим,
@@ -1799,11 +1814,30 @@
         }).catch(function () {});
       } catch (e) {}
 
-      // Redirect
+      /* Уход в бота. Раньше здесь стоял голый таймер на 300 мс, и цель Метрики гонялась
+         с редиректом: страница успевала смениться раньше, чем уходил запрос, — за 08.08.2026
+         кнопку нажали дважды, а в отчёте по цели остался ноль. Теперь наоборот: сначала
+         отправляем цель и уходим из её колбэка (Метрика вызывает его, когда данные приняты).
+         Соседние fetch переживают переход сами — у них keepalive.
+
+         Две страховки, чтобы человек не залип на кнопке:
+         — если Метрика молчит (блокировщик, медленная сеть) — уходим через 1,5 с;
+         — если счётчик подменён заглушкой (служебный заход, превью, локальная машина) —
+           колбэка не будет вовсе, поэтому уходим сразу. */
       if (SALEBOT_REDIRECT_URL !== 'SALEBOT_REDIRECT_URL') {
-        setTimeout(function() {
+        var redirected = false;
+        var goToBot = function () {
+          if (redirected) return;
+          redirected = true;
           window.location.href = SALEBOT_REDIRECT_URL;
-        }, 300);
+        };
+        var counterLive = (typeof ym === 'function') && ym.bcStub !== true;
+        if (counterLive) {
+          try { ym(105930063, 'reachGoal', 'calc_done', goToBot); } catch (e) {}
+          setTimeout(goToBot, 1500);
+        } else {
+          setTimeout(goToBot, 300);
+        }
       }
     }
 
@@ -1856,7 +1890,19 @@
             || !!(window.__playwright || window.__puppeteer_evaluation_script__ || window._phantom || window.callPhantom || window.__nightmare || window.Cypress || window.__selenium_unwrapped);
         } catch (e2) {}
       }
-      if (staff) { window.ym = function () {}; return; }
+      /* Третий случай: страница открыта не на боевом, а на превью или на машине разработчика —
+         работа над правками не должна попадать в статистику. Список «где НЕ считаем», а не
+         «где считаем»: новый адрес по умолчанию продолжит собирать данные, а не замолчит. */
+      if (!staff) {
+        try {
+          var h = location.hostname;
+          staff = /^(localhost|127\.|0\.0\.0\.0|\[?::1)/.test(h) || /\.local$/.test(h)
+            || /^new\./.test(h) || /(^|\.)github\.io$/.test(h);
+        } catch (e3) {}
+      }
+      /* Метка на заглушке: по ней расчёт понимает, что ответа от Метрики ждать нечего,
+         и уводит человека в бота сразу, не выдерживая паузу впустую. */
+      if (staff) { window.ym = function () {}; window.ym.bcStub = true; return; }
 
       (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
       m[i].l=1*new Date();
