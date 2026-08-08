@@ -1389,7 +1389,9 @@
     // 1. Webhook — куда летят данные расчёта
     const SALEBOT_WEBHOOK_URL = 'https://chatter.salebot.pro/api/4722a045346a33ecf63aa22ee02129c4/callback';
 
-    // 2. Редирект обратно в Telegram-бот
+    // 2. Редирект обратно в Telegram-бот. Сама ссылка собирается перед переходом
+    //    функцией botLink() — в неё кладётся ещё и сумма расчёта; здесь остаётся признак
+    //    «бот настроен» и запасной адрес.
     const SALEBOT_REDIRECT_URL = 'https://t.me/pashakotoff_bot?start=calc_' + userId;
 
     /* ============================================================
@@ -1805,11 +1807,27 @@
     /* ============================================================
        CTA — SALEBOT
     ============================================================ */
+    /* Ссылка в бота. В параметре `start` Telegram разрешает 64 символа из букв, цифр,
+       дефиса и подчёркивания — этого хватает, чтобы кроме идентификатора человека положить
+       туда и главную цифру расчёта: годовые потери в тысячах, компактной 36-ричной записью.
+       Смысл: бот может назвать человеку его сумму первым же сообщением, даже если вебхук
+       с полным расчётом почему-то не доехал. Ночью 09.08.2026 человек с суммой 9,68 млн
+       перешёл в бота и не получил ничего — хвоста в ссылке не было вовсе. */
+    function botLink(totalYear) {
+      var tail = '';
+      try { tail = '-' + Math.round((totalYear || 0) / 1000).toString(36); } catch (e) {}
+      return 'https://t.me/pashakotoff_bot?start=' + ('calc_' + userId + tail).slice(0, 64);
+    }
+
     function handleCTA() {
       const c = calc();
       const payload = {
         client_id: userId,
         message: 'calc_done',
+        // Откуда пришёл человек — то же, что уходит в CRM: чтобы разговор в боте начинался
+        // с понимания источника, а не с пустого места.
+        referer: attribution.referer,
+        first_touch: attribution.first_touch,
         current_income: state.current_income,
         hours_per_week: state.hours_per_week,
         team_size: state.team_size,
@@ -1823,17 +1841,21 @@
         total_day: Math.round(c.total_day)
       };
 
-      // Fire-and-forget. text/plain + no-cors обходят CORS (у эндпойнта Salebot нет
-      // CORS-заголовков, иначе preflight рубит часть лидов). keepalive гарантирует
-      // доставку, даже когда страница уже редиректит в бота.
+      /* Отправки, которые должны успеть уйти ДО перехода в Telegram. Держим их промисы:
+         уходим не по таймеру, а когда всё отправлено (см. конец функции). keepalive —
+         вторая линия обороны на случай, если переход всё же случится раньше.
+         text/plain + no-cors обходят CORS: у эндпойнта Salebot нет нужных заголовков,
+         и preflight-запрос рубил бы часть лидов. */
+      const sending = [];
+
       if (SALEBOT_WEBHOOK_URL !== 'SALEBOT_WEBHOOK_URL') {
-        fetch(SALEBOT_WEBHOOK_URL, {
+        sending.push(fetch(SALEBOT_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(payload),
           mode: 'no-cors',
           keepalive: true
-        }).catch(function() {});
+        }).catch(function() {}));
       }
 
       // Цель Метрики на завершённый расчёт (заведена в счётчике). Имя совпадает со stage,
@@ -1845,7 +1867,7 @@
       // Salebot-вебхук выше уже сработал. Этот запрос его НЕ трогает, ошибки глушим,
       // на редирект в бота не влияет. source=calculator, событие без контакта.
       try {
-        fetch('https://businesscommandos.ru/event.php', {
+        sending.push(fetch('https://businesscommandos.ru/event.php', {
           method: 'POST',
           mode: 'no-cors',
           keepalive: true,
@@ -1862,33 +1884,35 @@
             // с визитом и увидеть весь путь человека, не разбирая сырые логи руками.
             payload: JSON.stringify(Object.assign({ ym_client_id: window.bcClientId || '' }, payload))
           })
-        }).catch(function () {});
+        }).catch(function () {}));
       } catch (e) {}
 
-      /* Уход в бота. Раньше здесь стоял голый таймер на 300 мс, и цель Метрики гонялась
-         с редиректом: страница успевала смениться раньше, чем уходил запрос, — за 08.08.2026
-         кнопку нажали дважды, а в отчёте по цели остался ноль. Теперь наоборот: сначала
-         отправляем цель и уходим из её колбэка (Метрика вызывает его, когда данные приняты).
-         Соседние fetch переживают переход сами — у них keepalive.
+      /* Уход в бота — последним действием, когда всё отправлено. Раньше здесь стоял голый
+         таймер на 300 мс, и расчёт с целью Метрики гонялись с переходом: страница успевала
+         смениться раньше, чем уходили запросы. За 08.08.2026 кнопку нажали дважды, а в отчёте
+         по цели остался ноль, и расчёт в боте не появился.
 
-         Две страховки, чтобы человек не залип на кнопке:
-         — если Метрика молчит (блокировщик, медленная сеть) — уходим через 1,5 с;
-         — если счётчик подменён заглушкой (служебный заход, превью, локальная машина) —
-           колбэка не будет вовсе, поэтому уходим сразу. */
+         Теперь ждём три вещи разом: вебхук с расчётом в бота, копию в CRM и подтверждение
+         Метрики о принятой цели. Как только всё ушло — переходим.
+
+         Страховки, чтобы человек не залип на кнопке:
+         — если что-то молчит (блокировщик, медленная сеть) — уходим через 2 с в любом случае;
+         — если счётчик подменён заглушкой (служебный заход, превью, локальная машина),
+           подтверждения от него не будет вовсе — не ждём его отдельно. */
       if (SALEBOT_REDIRECT_URL !== 'SALEBOT_REDIRECT_URL') {
         var redirected = false;
         var goToBot = function () {
           if (redirected) return;
           redirected = true;
-          window.location.href = SALEBOT_REDIRECT_URL;
+          window.location.href = botLink(payload.total_year);
         };
         var counterLive = (typeof ym === 'function') && ym.bcStub !== true;
-        if (counterLive) {
-          try { ym(105930063, 'reachGoal', 'calc_done', goToBot); } catch (e) {}
-          setTimeout(goToBot, 1500);
-        } else {
-          setTimeout(goToBot, 300);
-        }
+        var goalSent = new Promise(function (resolve) {
+          if (!counterLive) return resolve();
+          try { ym(105930063, 'reachGoal', 'calc_done', resolve); } catch (e) { resolve(); }
+        });
+        Promise.all(sending.concat([goalSent])).then(goToBot, goToBot);
+        setTimeout(goToBot, 2000);
       }
     }
 
