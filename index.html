@@ -1339,6 +1339,53 @@
       return own;
     })();
 
+    /* Откуда пришёл человек. Ночью 08.08.2026 калькулятор впервые прошёл живой посетитель —
+       и ответить «откуда он» по карточке лида было нечем: пусто и в реферере, и в первом
+       касании, а страница значилась как «/». Путь пришлось доставать руками из сырых логов
+       Метрики (поиск → главная → калькулятор). Теперь калькулятор передаёт то же, что форма
+       сайта, и строка первого касания собирается в том же формате.
+
+       Память браузера у поддомена своя, поэтому первое касание держим не в localStorage,
+       а в cookie на общем домене `.businesscommandos.ru` — её видят и сайт, и калькулятор,
+       и аудит, так что заход «из поиска на главную» доживает до расчёта. */
+    const attribution = (function () {
+      const qp = function (n) { return new URLSearchParams(location.search).get(n) || ''; };
+      const channelOf = function (ref) {
+        if (!ref) return 'прямой';
+        try {
+          const h = new URL(ref).hostname;
+          if (/businesscommandos\.ru/.test(h)) return /\/blog\//.test(ref) ? 'блог (статья)' : 'внутренний переход';
+          if (/yandex\./.test(h)) return 'Яндекс';
+          if (/google\./.test(h)) return 'Google';
+          if (/(vk\.com|t\.me|telegram|instagram|facebook|ok\.ru)/.test(h)) return 'соцсеть';
+          return 'переход: ' + h;
+        } catch (e) { return ref; }
+      };
+      let first = null;
+      try {
+        const m = document.cookie.match(/(?:^|;\s*)bc_attribution=([^;]*)/);
+        if (m) first = JSON.parse(decodeURIComponent(m[1]));
+      } catch (e) {}
+      if (!first) {
+        first = {
+          a: qp('a'),
+          campaign: qp('utm_campaign'),
+          channel: qp('utm_source') || channelOf(document.referrer),
+          ref: document.referrer || '',
+          date: new Date().toLocaleDateString('ru-RU')
+        };
+        try {
+          document.cookie = 'bc_attribution=' + encodeURIComponent(JSON.stringify(first)) +
+            '; domain=.businesscommandos.ru; path=/; max-age=15552000; samesite=lax';
+        } catch (e) {}
+      }
+      return {
+        page: location.href,
+        referer: document.referrer || '',
+        first_touch: [first.channel, first.a || first.campaign || first.ref || '—', first.date].filter(Boolean).join(' · ')
+      };
+    })();
+
     // 1. Webhook — куда летят данные расчёта
     const SALEBOT_WEBHOOK_URL = 'https://chatter.salebot.pro/api/4722a045346a33ecf63aa22ee02129c4/callback';
 
@@ -1807,9 +1854,13 @@
             kind: 'event',
             stage: 'calc_done',
             client_id: userId,
-            page: location.pathname,
+            page: attribution.page,
             channel: 'калькулятор потерь',
-            payload: JSON.stringify(payload)
+            referer: attribution.referer,
+            first_touch: attribution.first_touch,
+            // Идентификатор посетителя в Метрике — по нему карточку лида можно сшить
+            // с визитом и увидеть весь путь человека, не разбирая сырые логи руками.
+            payload: JSON.stringify(Object.assign({ ym_client_id: window.bcClientId || '' }, payload))
           })
         }).catch(function () {});
       } catch (e) {}
@@ -1915,6 +1966,11 @@
         trackLinks:true,
         accurateTrackBounce:true
       });
+
+      /* Идентификатор посетителя в Метрике — кладём его в заявку, чтобы карточку лида
+         можно было сшить с визитом и увидеть весь путь человека. Спрашиваем сразу
+         при загрузке: к моменту нажатия кнопки ответ уже лежит наготове. */
+      ym(105930063, 'getClientID', function (id) { window.bcClientId = id || ''; });
     })();
   </script>
   <noscript><div><img src="https://mc.yandex.ru/watch/105930063" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
