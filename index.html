@@ -1320,6 +1320,7 @@
     };
 
     const TOTAL_STEPS = 6;
+
     /* Кто считает. Из бота человек приходит по ссылке с ?user_id=..., и расчёт есть к кому
        привязать. У пришедшего с сайта или из поиска этого параметра нет — раньше здесь
        оставалась пустая строка, и дальше всё ломалось тихо: в Salebot уходил расчёт без
@@ -1914,6 +1915,9 @@
           if (!counterLive) return resolve();
           try { ym(105930063, 'reachGoal', 'calc_done', resolve); } catch (e) { resolve(); }
         });
+        /* Та же цель в Google Analytics. Ответа не ждём: уход в бота держит только Метрика,
+           у которой мы просим подтверждение отправки — GA4 такого колбэка не даёт. */
+        if (typeof gtag === 'function') { try { gtag('event', 'calc_done'); } catch (e) {} }
         Promise.all(sending.concat([goalSent])).then(goToBot, goToBot);
         setTimeout(goToBot, 2000);
       }
@@ -1978,6 +1982,10 @@
             || /^new\./.test(h) || /(^|\.)github\.io$/.test(h);
         } catch (e3) {}
       }
+      /* Решение «считать или нет» принимается один раз и на всю страницу: блок Google
+         Analytics ниже читает этот флаг, а не повторяет детект своей копией кода. */
+      window.__bcNoTrack = staff;
+
       /* Метка на заглушке: по ней расчёт понимает, что ответа от Метрики ждать нечего,
          и уводит человека в бота сразу, не выдерживая паузу впустую. */
       if (staff) { window.ym = function () {}; window.ym.bcStub = true; return; }
@@ -2001,5 +2009,41 @@
     })();
   </script>
   <noscript><div><img src="https://mc.yandex.ru/watch/105930063" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- Google Analytics 4 (G-7F1EHSZ1Z4) и Google Tag Manager (GTM-T4874NB3) — 17.08.2026.
+       Тот же ресурс, что на сайте, в блоге и в аудите: калькулятор — часть сайта, а не
+       отдельный продукт, и путь «главная → расчёт» должен читаться одним визитом.
+       Служебные заходы отсекает флаг __bcNoTrack из блока Метрики выше.
+       ⚠️ Внутрь GTM не добавлять второй тег GA4 с этим же идентификатором — двойной счёт. -->
+  <script>
+    (function (w, d) {
+      w.dataLayer = w.dataLayer || [];
+      w.gtag = function () { w.dataLayer.push(arguments); };
+      if (w.__bcNoTrack) { w.gtag = function () {}; return; }
+
+      gtag('js', new Date());
+      gtag('config', 'G-7F1EHSZ1Z4');
+      w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+
+      var done = false;
+      function load() {
+        if (done) return; done = true;
+        ['https://www.googletagmanager.com/gtag/js?id=G-7F1EHSZ1Z4',
+         'https://www.googletagmanager.com/gtm.js?id=GTM-T4874NB3'].forEach(function (src) {
+          var s = d.createElement('script'), f = d.getElementsByTagName('script')[0];
+          s.async = true; s.src = src;
+          f.parentNode.insertBefore(s, f);
+        });
+      }
+      function schedule() {
+        if ('requestIdleCallback' in w) w.requestIdleCallback(load, { timeout: 2000 });
+        else setTimeout(load, 1200);
+      }
+      if (d.readyState === 'complete') schedule();
+      else w.addEventListener('load', schedule, { once: true });
+      ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (ev) {
+        w.addEventListener(ev, load, { once: true, passive: true });
+      });
+    })(window, document);
+  </script>
 </body>
 </html>
